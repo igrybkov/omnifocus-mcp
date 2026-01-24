@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "omnifocus": {
+      "command": "uv",
+      "args": [
+        "run",
+        "omnifocus-mcp"
+      ]
+    }
+  }
+}

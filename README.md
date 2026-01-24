@@ -6,9 +6,10 @@ A Python-based Model Context Protocol (MCP) server that enables AI assistants li
 
 - 🔧 **Comprehensive OmniFocus Integration**: Add, edit, remove, and query tasks and projects
 - 🐍 **Official Python MCP SDK**: Built using the official MCP SDK with FastMCP
-- 📡 **Stdin/Stdout Transport**: Standard MCP stdio protocol for seamless integration
+- �� **Stdin/Stdout Transport**: Standard MCP stdio protocol for seamless integration
 - ⚡ **UV Support**: Full support for UV package manager, including `uvx` for quick installation
 - 🚀 **Easy Installation**: Install directly from GitHub with one command
+- �� **Modular Design**: Tools organized in separate modules for better maintainability
 
 ## Installation
 
@@ -48,6 +49,8 @@ cd omnifocus-mcp
 uv sync
 uv run omnifocus-mcp
 ```
+
+For local development, the repository includes a `.mcp.json` file for MCP client configuration.
 
 ## Usage
 
@@ -90,14 +93,7 @@ After updating the configuration, restart Claude Desktop.
 
 The server provides the following tools to interact with OmniFocus:
 
-#### 1. `dump_database`
-Export the current state of your OmniFocus database, including all projects and tasks.
-
-```
-Example: "Show me all my OmniFocus tasks"
-```
-
-#### 2. `add_omnifocus_task`
+#### 1. `add_omnifocus_task`
 Add a new task to OmniFocus.
 
 **Parameters:**
@@ -109,7 +105,7 @@ Add a new task to OmniFocus.
 Example: "Add a task 'Review quarterly report' to my Work project"
 ```
 
-#### 3. `add_project`
+#### 2. `add_project`
 Create a new project in OmniFocus.
 
 **Parameters:**
@@ -120,7 +116,7 @@ Create a new project in OmniFocus.
 Example: "Create a new project called 'Website Redesign'"
 ```
 
-#### 4. `remove_item`
+#### 3. `remove_item`
 Remove a task or project from OmniFocus.
 
 **Parameters:**
@@ -131,7 +127,7 @@ Remove a task or project from OmniFocus.
 Example: "Remove the task 'Buy groceries'"
 ```
 
-#### 5. `edit_item`
+#### 4. `edit_item`
 Edit an existing task or project.
 
 **Parameters:**
@@ -144,6 +140,48 @@ Edit an existing task or project.
 ```
 Example: "Mark the task 'Finish presentation' as complete"
 Example: "Rename project 'Q1 Goals' to 'Q2 Goals'"
+```
+
+### Debug Tools (--expanded mode)
+
+By default, the `dump_database` tool is hidden to prevent agents from using it unnecessarily. To enable it, run the server with the `--expanded` flag:
+
+```bash
+omnifocus-mcp --expanded
+```
+
+Or in Claude Desktop config:
+
+```json
+{
+  "mcpServers": {
+    "omnifocus": {
+      "command": "omnifocus-mcp",
+      "args": ["--expanded"]
+    }
+  }
+}
+```
+
+#### `dump_database` (expanded mode only)
+Export the current state of your OmniFocus database, including all projects and tasks.
+
+**Note**: This tool is only available with the `--expanded` flag to avoid unnecessary database dumps.
+
+```
+Example: "Show me all my OmniFocus tasks"
+```
+
+## Project Structure
+
+```
+src/omnifocus_mcp/
+├── __init__.py           # Package initialization
+├── server.py             # Main server and tool registration
+├── utils.py              # Utility functions (AppleScript escaping)
+├── tools_tasks.py        # Task-related tools
+├── tools_projects.py     # Project-related tools
+└── tools_debug.py        # Debug tools (dump_database)
 ```
 
 ## Requirements
@@ -161,6 +199,8 @@ This MCP server uses AppleScript to communicate with OmniFocus. When you make re
 3. AppleScript commands are executed to interact with OmniFocus
 4. Results are returned via stdout to the client
 
+All user inputs are properly escaped to prevent AppleScript injection attacks.
+
 ## Inspiration
 
 This project was inspired by [themotionmachine/OmniFocus-MCP](https://github.com/themotionmachine/OmniFocus-MCP), which provides a TypeScript/Node.js implementation. This Python version offers:
@@ -169,6 +209,7 @@ This project was inspired by [themotionmachine/OmniFocus-MCP](https://github.com
 - Modern UV package manager support
 - Simpler dependency management
 - FastMCP for cleaner, more maintainable code
+- Modular tool organization
 
 ## Contributing
 
