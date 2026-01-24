@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "omnifocus": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/igrybkov/omnifocus-mcp",
+        "omnifocus-mcp"
+      ]
+    }
+  }
+}
