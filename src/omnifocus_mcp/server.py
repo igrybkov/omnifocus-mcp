@@ -4,10 +4,12 @@ import sys
 import argparse
 from mcp.server.fastmcp import FastMCP
 
-# Import tools from separate modules
-from .tools_tasks import add_omnifocus_task, edit_item, remove_item
-from .tools_projects import add_project
-from .tools_debug import dump_database
+# Import tools from mcp_tools package
+from .mcp_tools.tasks.add_task import add_omnifocus_task
+from .mcp_tools.tasks.edit_item import edit_item
+from .mcp_tools.tasks.remove_item import remove_item
+from .mcp_tools.projects.add_project import add_project
+from .mcp_tools.debug.dump_database import dump_database
 
 # Create MCP server instance
 mcp = FastMCP("OmniFocus MCP Server")

@@ -1,4 +1,4 @@
-"""Debug and diagnostic tools for OmniFocus."""
+"""Database dump tool for OmniFocus."""
 
 import asyncio
 

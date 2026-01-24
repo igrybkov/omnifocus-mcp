@@ -176,12 +176,22 @@ Example: "Show me all my OmniFocus tasks"
 
 ```
 src/omnifocus_mcp/
-├── __init__.py           # Package initialization
-├── server.py             # Main server and tool registration
-├── utils.py              # Utility functions (AppleScript escaping)
-├── tools_tasks.py        # Task-related tools
-├── tools_projects.py     # Project-related tools
-└── tools_debug.py        # Debug tools (dump_database)
+├── __init__.py              # Package initialization
+├── server.py                # Main server and tool registration
+├── utils.py                 # Utility functions (AppleScript escaping)
+└── mcp_tools/               # MCP tools package
+    ├── __init__.py
+    ├── tasks/               # Task-related tools
+    │   ├── __init__.py
+    │   ├── add_task.py      # Add new tasks
+    │   ├── edit_item.py     # Edit tasks/projects
+    │   └── remove_item.py   # Remove tasks/projects
+    ├── projects/            # Project-related tools
+    │   ├── __init__.py
+    │   └── add_project.py   # Add new projects
+    └── debug/               # Debug tools
+        ├── __init__.py
+        └── dump_database.py # Database dump (--expanded only)
 ```
 
 ## Requirements

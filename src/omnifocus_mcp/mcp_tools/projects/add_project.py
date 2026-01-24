@@ -1,7 +1,7 @@
-"""Tools for managing OmniFocus projects."""
+"""Add project tool for OmniFocus."""
 
 import asyncio
-from .utils import escape_applescript_string
+from ...utils import escape_applescript_string
 
 
 async def add_project(
