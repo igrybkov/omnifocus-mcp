@@ -201,15 +201,23 @@ This MCP server uses AppleScript to communicate with OmniFocus. When you make re
 
 All user inputs are properly escaped to prevent AppleScript injection attacks.
 
-## Inspiration
+## Motivation & Design Philosophy
 
-This project was inspired by [themotionmachine/OmniFocus-MCP](https://github.com/themotionmachine/OmniFocus-MCP), which provides a TypeScript/Node.js implementation. This Python version offers:
+This project was inspired by [themotionmachine/OmniFocus-MCP](https://github.com/themotionmachine/OmniFocus-MCP), but created to address specific limitations:
 
-- Native Python implementation using the official MCP SDK
-- Modern UV package manager support
-- Simpler dependency management
-- FastMCP for cleaner, more maintainable code
-- Modular tool organization
+### Key Improvements
+
+- **Efficient Database Access**: The `dump_database` tool is hidden by default (requires `--expanded` flag) to prevent AI agents from unnecessarily dumping entire databases. This is critical for users with large OmniFocus databases where frequent dumps become a performance bottleneck.
+
+- **Rapid Feature Adoption**: Independent development allows quick implementation of new OmniFocus features (like Planned dates) without waiting for upstream project maintainers.
+
+- **Modular Architecture**: Tools are organized in separate modules for better maintainability and easier extension.
+
+### Technical Stack
+
+- **Python**: More convenient development experience with modern tooling
+- **Official MCP SDK**: Uses FastMCP for cleaner, more maintainable code
+- **UV Package Manager**: Modern Python package management with simple installation via `uvx`
 
 ## Contributing
 
