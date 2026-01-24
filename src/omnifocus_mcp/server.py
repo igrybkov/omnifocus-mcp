@@ -9,6 +9,20 @@ from mcp.server.fastmcp import FastMCP
 mcp = FastMCP("OmniFocus MCP Server")
 
 
+def escape_applescript_string(text: str) -> str:
+    """
+    Escape a string for safe use in AppleScript.
+    
+    Args:
+        text: The string to escape
+        
+    Returns:
+        Escaped string safe for AppleScript interpolation
+    """
+    # Escape backslashes first, then quotes
+    return text.replace('\\', '\\\\').replace('"', '\\"')
+
+
 @mcp.tool()
 async def dump_database() -> str:
     """
@@ -77,29 +91,34 @@ async def add_omnifocus_task(
         Success or error message
     """
     try:
+        # Escape all user inputs to prevent AppleScript injection
+        escaped_name = escape_applescript_string(name)
+        escaped_note = escape_applescript_string(note)
+        escaped_project = escape_applescript_string(project)
+        
         # Build AppleScript to add task
         if project:
             script = f'''
             tell application "OmniFocus"
                 tell default document
-                    set theProject to first flattened project where its name = "{project}"
+                    set theProject to first flattened project where its name = "{escaped_project}"
                     tell theProject
-                        set newTask to make new task with properties {{name:"{name}"}}
-                        if "{note}" is not "" then
-                            set note of newTask to "{note}"
+                        set newTask to make new task with properties {{name:"{escaped_name}"}}
+                        if "{escaped_note}" is not "" then
+                            set note of newTask to "{escaped_note}"
                         end if
                     end tell
                 end tell
             end tell
-            return "Task added successfully to project: {project}"
+            return "Task added successfully to project: {escaped_project}"
             '''
         else:
             script = f'''
             tell application "OmniFocus"
                 tell default document
-                    set newTask to make new inbox task with properties {{name:"{name}"}}
-                    if "{note}" is not "" then
-                        set note of newTask to "{note}"
+                    set newTask to make new inbox task with properties {{name:"{escaped_name}"}}
+                    if "{escaped_note}" is not "" then
+                        set note of newTask to "{escaped_note}"
                     end if
                 end tell
             end tell
@@ -137,16 +156,20 @@ async def add_project(
         Success or error message
     """
     try:
+        # Escape user inputs to prevent AppleScript injection
+        escaped_name = escape_applescript_string(name)
+        escaped_note = escape_applescript_string(note)
+        
         script = f'''
         tell application "OmniFocus"
             tell default document
-                set newProject to make new project with properties {{name:"{name}"}}
-                if "{note}" is not "" then
-                    set note of newProject to "{note}"
+                set newProject to make new project with properties {{name:"{escaped_name}"}}
+                if "{escaped_note}" is not "" then
+                    set note of newProject to "{escaped_note}"
                 end if
             end tell
         end tell
-        return "Project created successfully: {name}"
+        return "Project created successfully: {escaped_name}"
         '''
         
         proc = await asyncio.create_subprocess_exec(
@@ -180,25 +203,28 @@ async def remove_item(
         Success or error message
     """
     try:
+        # Escape user input to prevent AppleScript injection
+        escaped_name = escape_applescript_string(name)
+        
         if item_type == "project":
             script = f'''
             tell application "OmniFocus"
                 tell default document
-                    set theProject to first flattened project where its name = "{name}"
+                    set theProject to first flattened project where its name = "{escaped_name}"
                     delete theProject
                 end tell
             end tell
-            return "Project removed successfully: {name}"
+            return "Project removed successfully: {escaped_name}"
             '''
         else:
             script = f'''
             tell application "OmniFocus"
                 tell default document
-                    set theTask to first flattened task where its name = "{name}"
+                    set theTask to first flattened task where its name = "{escaped_name}"
                     delete theTask
                 end tell
             end tell
-            return "Task removed successfully: {name}"
+            return "Task removed successfully: {escaped_name}"
             '''
         
         proc = await asyncio.create_subprocess_exec(
@@ -238,16 +264,21 @@ async def edit_item(
         Success or error message
     """
     try:
+        # Escape all user inputs to prevent AppleScript injection
+        escaped_current_name = escape_applescript_string(current_name)
+        escaped_new_name = escape_applescript_string(new_name)
+        escaped_new_note = escape_applescript_string(new_note)
+        
         if item_type == "project":
             script = f'''
             tell application "OmniFocus"
                 tell default document
-                    set theProject to first flattened project where its name = "{current_name}"
-                    if "{new_name}" is not "" then
-                        set name of theProject to "{new_name}"
+                    set theProject to first flattened project where its name = "{escaped_current_name}"
+                    if "{escaped_new_name}" is not "" then
+                        set name of theProject to "{escaped_new_name}"
                     end if
-                    if "{new_note}" is not "" then
-                        set note of theProject to "{new_note}"
+                    if "{escaped_new_note}" is not "" then
+                        set note of theProject to "{escaped_new_note}"
                     end if
                     if {str(mark_complete).lower()} then
                         set completed of theProject to true
@@ -260,12 +291,12 @@ async def edit_item(
             script = f'''
             tell application "OmniFocus"
                 tell default document
-                    set theTask to first flattened task where its name = "{current_name}"
-                    if "{new_name}" is not "" then
-                        set name of theTask to "{new_name}"
+                    set theTask to first flattened task where its name = "{escaped_current_name}"
+                    if "{escaped_new_name}" is not "" then
+                        set name of theTask to "{escaped_new_name}"
                     end if
-                    if "{new_note}" is not "" then
-                        set note of theTask to "{new_note}"
+                    if "{escaped_new_note}" is not "" then
+                        set note of theTask to "{escaped_new_note}"
                     end if
                     if {str(mark_complete).lower()} then
                         set completed of theTask to true
