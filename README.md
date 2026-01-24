@@ -194,6 +194,35 @@ src/omnifocus_mcp/
         └── dump_database.py # Database dump (--expanded only)
 ```
 
+## Development
+
+### Running Tests
+
+The project includes a comprehensive test suite using pytest:
+
+```bash
+# Install development dependencies
+pip install -e ".[dev]"
+
+# Run all tests
+pytest
+
+# Run with verbose output
+pytest -v
+
+# Run specific test file
+pytest tests/test_tasks.py
+
+# Run with coverage
+pytest --cov=omnifocus_mcp
+```
+
+The test suite includes:
+- **Unit tests** for all tools (tasks, projects, debug)
+- **Security tests** for AppleScript injection prevention
+- **Integration tests** for tool registration and CLI behavior
+- **27 total tests** covering core functionality
+
 ## Requirements
 
 - macOS (OmniFocus is macOS-only)
