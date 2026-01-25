@@ -13,6 +13,7 @@ from .mcp_tools.perspectives.list_perspectives import list_perspectives
 from .mcp_tools.projects.add_project import add_project
 from .mcp_tools.projects.browse import browse
 from .mcp_tools.query.search import search
+from .mcp_tools.tags.list_tags import list_tags
 from .mcp_tools.tasks.add_task import add_omnifocus_task
 from .mcp_tools.tasks.edit_item import edit_item
 from .mcp_tools.tasks.remove_item import remove_item
@@ -35,6 +36,7 @@ _TOOLS = [
     search,
     list_perspectives,
     get_perspective_view,
+    list_tags,
     dump_database,
 ]
 
