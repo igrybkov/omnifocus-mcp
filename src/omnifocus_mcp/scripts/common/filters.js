@@ -3,6 +3,30 @@
 // Requires: status_maps.js to be loaded first
 
 /**
+ * Check if a date falls within N days from now.
+ * @param {Date|null} date - The date to check
+ * @param {number} days - Number of days in the future
+ * @param {boolean} requirePastOrPresent - If true, date must also be >= now (for due dates)
+ * @returns {boolean} True if date is within range
+ */
+function isWithinDays(date, days, requirePastOrPresent) {
+    if (!date) {
+        return false;
+    }
+    var now = new Date();
+    var futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + days);
+
+    if (date > futureDate) {
+        return false;
+    }
+    if (requirePastOrPresent && date < now) {
+        return false;
+    }
+    return true;
+}
+
+/**
  * Create a filter function for tasks.
  * @param {Object} filters - Filter criteria
  * @param {Object} options - Additional options
@@ -67,39 +91,21 @@ function createTaskFilter(filters, options) {
 
         // Filter by due_within N days
         if (filters.due_within !== undefined) {
-            if (!task.dueDate) {
-                return false;
-            }
-            var now = new Date();
-            var futureDate = new Date();
-            futureDate.setDate(futureDate.getDate() + filters.due_within);
-            if (task.dueDate > futureDate || task.dueDate < now) {
+            if (!isWithinDays(task.dueDate, filters.due_within, true)) {
                 return false;
             }
         }
 
         // Filter by deferred_until N days
         if (filters.deferred_until !== undefined) {
-            if (!task.deferDate) {
-                return false;
-            }
-            var now = new Date();
-            var futureDate = new Date();
-            futureDate.setDate(futureDate.getDate() + filters.deferred_until);
-            if (task.deferDate > futureDate) {
+            if (!isWithinDays(task.deferDate, filters.deferred_until, false)) {
                 return false;
             }
         }
 
         // Filter by planned_within N days (OmniFocus 4.7+)
         if (filters.planned_within !== undefined) {
-            if (!task.plannedDate) {
-                return false;
-            }
-            var now = new Date();
-            var futureDate = new Date();
-            futureDate.setDate(futureDate.getDate() + filters.planned_within);
-            if (task.plannedDate > futureDate || task.plannedDate < now) {
+            if (!isWithinDays(task.plannedDate, filters.planned_within, true)) {
                 return false;
             }
         }
@@ -185,26 +191,14 @@ function createProjectFilter(filters, options) {
 
         // Filter by due_within N days
         if (filters.due_within !== undefined) {
-            if (!project.dueDate) {
-                return false;
-            }
-            var now = new Date();
-            var futureDate = new Date();
-            futureDate.setDate(futureDate.getDate() + filters.due_within);
-            if (project.dueDate > futureDate || project.dueDate < now) {
+            if (!isWithinDays(project.dueDate, filters.due_within, true)) {
                 return false;
             }
         }
 
         // Filter by deferred_until N days
         if (filters.deferred_until !== undefined) {
-            if (!project.deferDate) {
-                return false;
-            }
-            var now = new Date();
-            var futureDate = new Date();
-            futureDate.setDate(futureDate.getDate() + filters.deferred_until);
-            if (project.deferDate > futureDate) {
+            if (!isWithinDays(project.deferDate, filters.deferred_until, false)) {
                 return false;
             }
         }
