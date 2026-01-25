@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from ...dates import preprocess_date_filters
 from ..response import omnijs_json_response
 
 # Shared JS modules for search script
@@ -36,9 +37,12 @@ async def search(
             - tags: Filter by tag names (exact match, OR logic between tags)
             - status: Filter by status (OR logic)
             - flagged: Filter by flagged status
-            - due_within: Items due within N days from today
-            - deferred_until: Items deferred becoming available within N days
-            - planned_within: Tasks planned within N days from today (OmniFocus 4.7+)
+            - due_within: Items due within N days from today. Supports natural language:
+                "next 3 days", "this week", "tomorrow", or numeric days
+            - deferred_until: Items deferred becoming available within N days.
+                Supports natural language like due_within
+            - planned_within: Tasks planned within N days from today (OmniFocus 4.7+).
+                Supports natural language like due_within
             - has_note: Filter by note presence
             - available: For projects, filter to Active + not deferred
         fields: Specific fields to return (reduces response size). Task fields include:
@@ -52,11 +56,14 @@ async def search(
     Returns:
         JSON string with query results or count
     """
+    # Preprocess date filters to convert natural language to numeric days
+    processed_filters = preprocess_date_filters(filters or {})
+
     return await omnijs_json_response(
         "search",
         {
             "entity": entity,
-            "filters": filters or {},
+            "filters": processed_filters,
             "fields": fields,
             "limit": limit,
             "sort_by": sort_by,
