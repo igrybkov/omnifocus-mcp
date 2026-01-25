@@ -6,55 +6,73 @@ from unittest.mock import patch
 import pytest
 
 from omnifocus_mcp.cli import (
-    _parse_json_arg,
+    _func_name_to_cli_name,
+    _is_json_type,
     _print_result,
     app,
 )
 
 
-class TestParseJsonArg:
-    """Tests for _parse_json_arg function."""
+class TestIsJsonType:
+    """Tests for _is_json_type function."""
 
-    def test_parse_valid_dict(self):
-        """Test parsing a valid JSON object."""
-        result = _parse_json_arg('{"key": "value"}', "test")
-        assert result == {"key": "value"}
+    def test_list_type(self):
+        """Test that list type is detected."""
+        assert _is_json_type(list) is True
 
-    def test_parse_valid_array(self):
-        """Test parsing a valid JSON array."""
-        result = _parse_json_arg('["a", "b", "c"]', "test")
-        assert result == ["a", "b", "c"]
+    def test_list_str_type(self):
+        """Test that list[str] type is detected."""
+        assert _is_json_type(list[str]) is True
 
-    def test_parse_valid_bool(self):
-        """Test parsing a valid JSON boolean."""
-        result = _parse_json_arg("true", "test")
-        assert result is True
+    def test_dict_type(self):
+        """Test that dict type is detected."""
+        assert _is_json_type(dict) is True
 
-    def test_parse_valid_number(self):
-        """Test parsing a valid JSON number."""
-        result = _parse_json_arg("42", "test")
-        assert result == 42
+    def test_dict_str_any_type(self):
+        """Test that dict[str, Any] type is detected."""
+        from typing import Any
 
-    def test_parse_nested_object(self):
-        """Test parsing a nested JSON object."""
-        result = _parse_json_arg('{"filters": {"flagged": true, "due_within": 3}}', "test")
-        assert result == {"filters": {"flagged": True, "due_within": 3}}
+        assert _is_json_type(dict[str, Any]) is True
 
-    def test_parse_invalid_json_raises(self):
-        """Test that invalid JSON raises ValueError."""
-        with pytest.raises(ValueError) as exc_info:
-            _parse_json_arg("not valid json", "test_param")
-        assert "Invalid JSON for test_param" in str(exc_info.value)
+    def test_optional_list_type(self):
+        """Test that list[str] | None type is detected."""
+        assert _is_json_type(list[str] | None) is True
 
-    def test_parse_empty_object(self):
-        """Test parsing an empty JSON object."""
-        result = _parse_json_arg("{}", "test")
-        assert result == {}
+    def test_str_type_not_json(self):
+        """Test that str type is not detected as JSON."""
+        assert _is_json_type(str) is False
 
-    def test_parse_empty_array(self):
-        """Test parsing an empty JSON array."""
-        result = _parse_json_arg("[]", "test")
-        assert result == []
+    def test_int_type_not_json(self):
+        """Test that int type is not detected as JSON."""
+        assert _is_json_type(int) is False
+
+    def test_optional_str_not_json(self):
+        """Test that str | None type is not detected as JSON."""
+        assert _is_json_type(str | None) is False
+
+    def test_bool_type_not_json(self):
+        """Test that bool type is not detected as JSON."""
+        assert _is_json_type(bool) is False
+
+    def test_none_type_not_json(self):
+        """Test that None type is not detected as JSON."""
+        assert _is_json_type(None) is False
+
+
+class TestFuncNameToCliName:
+    """Tests for _func_name_to_cli_name function."""
+
+    def test_snake_to_kebab(self):
+        """Test converting snake_case to kebab-case."""
+        assert _func_name_to_cli_name("add_omnifocus_task") == "add-omnifocus-task"
+
+    def test_single_word(self):
+        """Test single word remains unchanged."""
+        assert _func_name_to_cli_name("query") == "query"
+
+    def test_multiple_underscores(self):
+        """Test multiple underscores."""
+        assert _func_name_to_cli_name("get_perspective_view") == "get-perspective-view"
 
 
 class TestPrintResult:
@@ -87,7 +105,6 @@ class TestCLICommands:
 
     def test_app_has_expected_commands(self):
         """Test that the app has all expected commands."""
-        # Get all registered command names from the help text
         import io
         import sys
 
@@ -101,16 +118,18 @@ class TestCLICommands:
         help_text = sys.stdout.getvalue()
         sys.stdout = old_stdout
 
+        # Commands are now auto-generated from function names (kebab-case)
         expected_commands = [
-            "add-task",
-            "edit",
-            "remove",
+            "add-omnifocus-task",
+            "edit-item",
+            "remove-item",
             "add-project",
-            "batch-add",
-            "batch-remove",
-            "query",
+            "get-tree",
+            "batch-add-items",
+            "batch-remove-items",
+            "query-omnifocus",
             "list-perspectives",
-            "get-perspective",
+            "get-perspective-view",
             "call",
             "list-tools",
         ]
@@ -129,15 +148,20 @@ class TestCLICommands:
         assert "add_omnifocus_task" in captured.out
         assert "query_omnifocus" in captured.out
         assert "list_perspectives" in captured.out
+        assert "get_tree" in captured.out
 
 
 class TestCallCommand:
     """Tests for the generic call command."""
 
-    @patch("omnifocus_mcp.cli.query_omnifocus")
-    def test_call_known_tool(self, mock_query, capsys):
+    @patch("omnifocus_mcp.cli._TOOLS")
+    def test_call_known_tool(self, mock_tools, capsys):
         """Test calling a known tool."""
-        mock_query.return_value = '{"count": 0, "items": []}'
+        from unittest.mock import AsyncMock
+
+        mock_query = AsyncMock(return_value='{"count": 0, "items": []}')
+        mock_tools.__contains__ = lambda self, key: key == "query_omnifocus"
+        mock_tools.__getitem__ = lambda self, key: (mock_query, "Query tasks")
 
         from omnifocus_mcp.cli import call_tool
 
