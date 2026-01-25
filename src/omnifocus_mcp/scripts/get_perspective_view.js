@@ -1,27 +1,12 @@
 // Get items visible in a specific OmniFocus perspective
 // Params: { perspective_name: string, limit: number, include_metadata: boolean, fields: string[] }
+// Requires: common/status_maps.js
 
 try {
     const perspectiveName = params.perspective_name;
     const limit = params.limit;
     const includeMetadata = params.include_metadata;
     const fieldsToInclude = params.fields;
-
-    // Status mapping
-    const taskStatusMap = {};
-    taskStatusMap[Task.Status.Available] = "Available";
-    taskStatusMap[Task.Status.Blocked] = "Blocked";
-    taskStatusMap[Task.Status.Completed] = "Completed";
-    taskStatusMap[Task.Status.Dropped] = "Dropped";
-    taskStatusMap[Task.Status.DueSoon] = "DueSoon";
-    taskStatusMap[Task.Status.Next] = "Next";
-    taskStatusMap[Task.Status.Overdue] = "Overdue";
-
-    const projectStatusMap = {};
-    projectStatusMap[Project.Status.Active] = "Active";
-    projectStatusMap[Project.Status.Done] = "Completed";
-    projectStatusMap[Project.Status.Dropped] = "Dropped";
-    projectStatusMap[Project.Status.OnHold] = "OnHold";
 
     // Helper to get task details
     function getTaskDetails(task) {

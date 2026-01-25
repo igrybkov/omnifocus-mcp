@@ -1,8 +1,6 @@
 """List perspectives tool for OmniFocus."""
 
-import json
-
-from ...omnijs import execute_omnijs_with_params
+from ..response import omnijs_json_response
 
 
 async def list_perspectives(
@@ -22,14 +20,10 @@ async def list_perspectives(
     Returns:
         JSON string with list of perspectives grouped by type
     """
-    try:
-        result = await execute_omnijs_with_params(
-            "list_perspectives",
-            {
-                "include_built_in": include_built_in,
-                "include_custom": include_custom,
-            },
-        )
-        return json.dumps(result, indent=2)
-    except Exception as e:
-        return json.dumps({"error": str(e)})
+    return await omnijs_json_response(
+        "list_perspectives",
+        {
+            "include_built_in": include_built_in,
+            "include_custom": include_custom,
+        },
+    )

@@ -3,6 +3,7 @@
 import json
 from typing import Any
 
+from ..response import build_batch_summary
 from ..tasks.remove_item import remove_item
 
 
@@ -55,15 +56,4 @@ async def batch_remove_items(
 
         results.append(result)
 
-    # Build summary
-    success_count = sum(1 for r in results if r.get("success"))
-    failure_count = len(results) - success_count
-
-    summary = {
-        "total": len(items),
-        "success": success_count,
-        "failed": failure_count,
-        "results": results,
-    }
-
-    return json.dumps(summary, indent=2)
+    return json.dumps(build_batch_summary(results), indent=2)

@@ -1,9 +1,8 @@
 """Browse tool - hierarchical view of folders, projects, and tasks."""
 
-import json
 from typing import Any
 
-from ...omnijs import execute_omnijs_with_params
+from ..response import omnijs_json_response
 
 # Shared JS modules for browse script
 BROWSE_INCLUDES = [
@@ -88,25 +87,21 @@ async def browse(
             "taskCount": 42
         }
     """
-    try:
-        result = await execute_omnijs_with_params(
-            "browse",
-            {
-                "parent_id": parent_id,
-                "parent_name": parent_name,
-                "filters": filters or {},
-                "task_filters": task_filters or {},
-                "include_completed": include_completed,
-                "max_depth": max_depth,
-                "include_root_projects": include_root_projects,
-                "summary": summary,
-                "fields": fields or [],
-                "include_folders": include_folders,
-                "include_projects": include_projects,
-                "include_tasks": include_tasks,
-            },
-            includes=BROWSE_INCLUDES,
-        )
-        return json.dumps(result, indent=2)
-    except Exception as e:
-        return json.dumps({"error": str(e)})
+    return await omnijs_json_response(
+        "browse",
+        {
+            "parent_id": parent_id,
+            "parent_name": parent_name,
+            "filters": filters or {},
+            "task_filters": task_filters or {},
+            "include_completed": include_completed,
+            "max_depth": max_depth,
+            "include_root_projects": include_root_projects,
+            "summary": summary,
+            "fields": fields or [],
+            "include_folders": include_folders,
+            "include_projects": include_projects,
+            "include_tasks": include_tasks,
+        },
+        includes=BROWSE_INCLUDES,
+    )

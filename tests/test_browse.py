@@ -14,9 +14,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_basic(self):
         """Test basic project tree retrieval."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {
                 "tree": [
                     {
@@ -58,9 +56,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_with_parent_id(self):
         """Test project tree with parent_id filter."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {
                 "tree": [{"type": "folder", "id": "folder1", "name": "Work", "children": []}],
                 "projectCount": 0,
@@ -76,9 +72,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_with_parent_name(self):
         """Test project tree with parent_name filter."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {
                 "tree": [{"type": "folder", "id": "folder1", "name": "Work", "children": []}],
                 "projectCount": 0,
@@ -94,9 +88,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_with_status_filter(self):
         """Test project tree with status filter."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"tree": [], "projectCount": 0, "folderCount": 0}
 
             await browse(filters={"status": ["Active", "OnHold"]})
@@ -107,9 +99,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_with_flagged_filter(self):
         """Test project tree with flagged filter."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"tree": [], "projectCount": 0, "folderCount": 0}
 
             await browse(filters={"flagged": True})
@@ -120,9 +110,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_with_tags_filter(self):
         """Test project tree with tags filter."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"tree": [], "projectCount": 0, "folderCount": 0}
 
             await browse(filters={"tags": ["work", "important"]})
@@ -133,9 +121,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_include_completed(self):
         """Test project tree with include_completed=True."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"tree": [], "projectCount": 0, "folderCount": 0}
 
             await browse(include_completed=True)
@@ -146,9 +132,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_with_max_depth(self):
         """Test project tree with max_depth limit."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"tree": [], "projectCount": 0, "folderCount": 0}
 
             await browse(max_depth=2)
@@ -159,9 +143,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_error_handling(self):
         """Test error handling when OmniJS returns an error."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"error": "Folder not found with ID: invalid_id"}
 
             result = await browse(parent_id="invalid_id")
@@ -173,9 +155,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_exception_handling(self):
         """Test exception handling."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.side_effect = Exception("Test exception")
 
             result = await browse()
@@ -187,9 +167,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_nested_folders(self):
         """Test project tree with nested folder structure."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {
                 "tree": [
                     {
@@ -257,9 +235,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_with_due_within_filter(self):
         """Test project tree with due_within filter."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"tree": [], "projectCount": 0, "folderCount": 0}
 
             await browse(filters={"due_within": 7})
@@ -270,9 +246,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_exclude_root_projects(self):
         """Test project tree with include_root_projects=False."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"tree": [], "projectCount": 0, "folderCount": 0}
 
             await browse(include_root_projects=False)
@@ -283,9 +257,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_summary_mode(self):
         """Test project tree with summary=True returns only counts."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"projectCount": 37, "folderCount": 6}
 
             result = await browse(summary=True)
@@ -301,9 +273,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_summary_mode_with_filters(self):
         """Test summary mode works with filters."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"projectCount": 10, "folderCount": 3}
 
             result = await browse(summary=True, filters={"status": ["Active"]}, parent_name="Goals")
@@ -315,9 +285,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_with_fields_filter(self):
         """Test project tree with specific fields requested."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {
                 "tree": [
                     {
@@ -339,9 +307,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_fields_always_includes_type(self):
         """Test that project type is always included regardless of fields."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {
                 "tree": [
                     {
@@ -364,9 +330,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_empty_fields_returns_all(self):
         """Test that empty fields list returns all fields."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"tree": [], "projectCount": 0, "folderCount": 0}
 
             await browse(fields=[])
@@ -377,9 +341,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_uses_correct_script_name(self):
         """Test that the correct script name is used."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"tree": [], "projectCount": 0, "folderCount": 0}
 
             await browse()
@@ -390,9 +352,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_parent_name_partial_match_single(self):
         """Test partial parent name match when single result found."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {
                 "tree": [{"type": "folder", "id": "folder1", "name": "🎯 Goals", "children": []}],
                 "projectCount": 0,
@@ -407,9 +367,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_parent_name_partial_match_suggestions(self):
         """Test partial parent name match returns suggestions when multiple found."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {
                 "error": "Folder not found with name: Work",
                 "suggestions": [
@@ -428,9 +386,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_parent_name_no_match(self):
         """Test parent name with no matches returns error without suggestions."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"error": "Folder not found with name: NonExistent"}
 
             result = await browse(parent_name="NonExistent")
@@ -442,9 +398,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_include_folders_false(self):
         """Test include_folders=False returns flat list of projects."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {
                 "tree": [
                     {"type": "project", "id": "proj1", "name": "Project A"},
@@ -462,9 +416,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_include_projects_false(self):
         """Test include_projects=False returns only folder structure."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {
                 "tree": [{"type": "folder", "id": "folder1", "name": "Work", "children": []}],
                 "projectCount": 0,
@@ -479,9 +431,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_include_tasks_true(self):
         """Test include_tasks=True returns tasks within projects."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {
                 "tree": [
                     {
@@ -516,9 +466,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_summary_with_tasks(self):
         """Test summary mode with include_tasks returns taskCount."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"projectCount": 5, "folderCount": 2, "taskCount": 42}
 
             result = await browse(summary=True, include_tasks=True)
@@ -532,9 +480,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_with_task_filters(self):
         """Test browse with task_filters parameter."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {
                 "tree": [],
                 "projectCount": 0,
@@ -551,9 +497,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_with_available_filter(self):
         """Test browse with available filter for projects."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"tree": [], "projectCount": 0, "folderCount": 0}
 
             await browse(filters={"available": True})
@@ -564,9 +508,7 @@ class TestBrowse:
     @pytest.mark.asyncio
     async def test_browse_passes_includes(self):
         """Test that browse passes the includes parameter."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.browse.execute_omnijs_with_params"
-        ) as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"tree": [], "projectCount": 0, "folderCount": 0}
 
             await browse()

@@ -2,11 +2,10 @@
 
 import asyncio
 
-from ...dates import create_date_assignment
-from ...tags import (
-    generate_add_tags_applescript,
-    generate_remove_tags_applescript,
-    generate_replace_tags_applescript,
+from ...applescript_builder import (
+    generate_find_clause,
+    generate_tag_modifications,
+    process_date_params,
 )
 from ...utils import escape_applescript_string
 
@@ -63,52 +62,24 @@ async def edit_item(
         if not id and not current_name:
             return "Error: Either 'id' or 'current_name' must be provided"
 
-        # Escape all user inputs to prevent AppleScript injection
-        escaped_current_name = escape_applescript_string(current_name)
-        escaped_id = escape_applescript_string(id or "")
+        # Escape user inputs to prevent AppleScript injection
         escaped_new_name = escape_applescript_string(new_name)
         escaped_new_note = escape_applescript_string(new_note)
         escaped_new_folder = escape_applescript_string(new_folder_name or "")
 
-        # Build pre-tell date scripts
-        pre_tell_scripts = []
-        in_tell_assignments = []
-
         # Determine item variable name
         item_var = "theProject" if item_type == "project" else "theTask"
 
-        # Handle due date
-        if new_due_date is not None:
-            pre_script, assignment = create_date_assignment(
-                new_due_date, "due date", item_var, "newDueDate"
-            )
-            if pre_script:
-                pre_tell_scripts.append(pre_script)
-            if assignment:
-                in_tell_assignments.append(assignment)
-
-        # Handle defer date
-        if new_defer_date is not None:
-            pre_script, assignment = create_date_assignment(
-                new_defer_date, "defer date", item_var, "newDeferDate"
-            )
-            if pre_script:
-                pre_tell_scripts.append(pre_script)
-            if assignment:
-                in_tell_assignments.append(assignment)
-
-        # Handle planned date (tasks only, OmniFocus 4.7+)
-        if new_planned_date is not None and item_type == "task":
-            pre_script, assignment = create_date_assignment(
-                new_planned_date, "planned date", item_var, "newPlannedDate"
-            )
-            if pre_script:
-                pre_tell_scripts.append(pre_script)
-            if assignment:
-                in_tell_assignments.append(assignment)
-
-        # Build date pre-script
-        date_pre_script = "\n\n".join(pre_tell_scripts) if pre_tell_scripts else ""
+        # Process date parameters (planned_date only for tasks)
+        date_params = process_date_params(
+            item_var,
+            due_date=new_due_date,
+            defer_date=new_defer_date,
+            planned_date=new_planned_date,
+            include_planned=(item_type == "task"),
+        )
+        date_pre_script = date_params.pre_tell_script
+        in_tell_assignments = date_params.in_tell_assignments
 
         # Build changes list for tracking what was modified
         changes = []
@@ -160,16 +131,11 @@ async def edit_item(
                 changes.append("completed")
 
             # Handle tags
-            if replace_tags is not None:
-                modifications.append(generate_replace_tags_applescript(replace_tags, item_var))
-                changes.append("tags (replaced)")
-            else:
-                if add_tags:
-                    modifications.append(generate_add_tags_applescript(add_tags, item_var))
-                    changes.append("tags (added)")
-                if remove_tags:
-                    modifications.append(generate_remove_tags_applescript(remove_tags, item_var))
-                    changes.append("tags (removed)")
+            tag_mods, tag_changes = generate_tag_modifications(
+                item_var, add_tags, remove_tags, replace_tags
+            )
+            modifications.extend(tag_mods)
+            changes.extend(tag_changes)
 
         # Handle project-specific properties
         if item_type == "project":
@@ -204,30 +170,16 @@ move {item_var} to end of projects of targetFolder''')
                 changes.append("folder")
 
             # Handle tags for projects too
-            if replace_tags is not None:
-                modifications.append(generate_replace_tags_applescript(replace_tags, item_var))
-                changes.append("tags (replaced)")
-            else:
-                if add_tags:
-                    modifications.append(generate_add_tags_applescript(add_tags, item_var))
-                    changes.append("tags (added)")
-                if remove_tags:
-                    modifications.append(generate_remove_tags_applescript(remove_tags, item_var))
-                    changes.append("tags (removed)")
+            tag_mods, tag_changes = generate_tag_modifications(
+                item_var, add_tags, remove_tags, replace_tags
+            )
+            modifications.extend(tag_mods)
+            changes.extend(tag_changes)
 
         modifications_str = "\n".join(modifications)
 
         # Build the find clause
-        if escaped_id:
-            if item_type == "project":
-                find_clause = f'set {item_var} to first flattened project where id = "{escaped_id}"'
-            else:
-                find_clause = f'set {item_var} to first flattened task where id = "{escaped_id}"'
-        else:
-            if item_type == "project":
-                find_clause = f'set {item_var} to first flattened project where its name = "{escaped_current_name}"'
-            else:
-                find_clause = f'set {item_var} to first flattened task where its name = "{escaped_current_name}"'
+        find_clause = generate_find_clause(item_type, item_var, id, current_name)
 
         # Build result message
         changes_str = ", ".join(changes) if changes else "no changes"

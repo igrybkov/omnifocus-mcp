@@ -14,7 +14,7 @@ class TestSearch:
     @pytest.mark.asyncio
     async def test_search_tasks_basic(self):
         """Test basic task search."""
-        with patch("omnifocus_mcp.mcp_tools.query.search.execute_omnijs_with_params") as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {
                 "count": 2,
                 "entity": "tasks",
@@ -35,7 +35,7 @@ class TestSearch:
     @pytest.mark.asyncio
     async def test_search_projects_basic(self):
         """Test basic project search."""
-        with patch("omnifocus_mcp.mcp_tools.query.search.execute_omnijs_with_params") as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {
                 "count": 1,
                 "entity": "projects",
@@ -53,7 +53,7 @@ class TestSearch:
     @pytest.mark.asyncio
     async def test_search_folders_basic(self):
         """Test basic folder search."""
-        with patch("omnifocus_mcp.mcp_tools.query.search.execute_omnijs_with_params") as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {
                 "count": 3,
                 "entity": "folders",
@@ -73,7 +73,7 @@ class TestSearch:
     @pytest.mark.asyncio
     async def test_search_with_flagged_filter(self):
         """Test search with flagged filter."""
-        with patch("omnifocus_mcp.mcp_tools.query.search.execute_omnijs_with_params") as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"count": 1, "entity": "tasks", "items": []}
 
             await search(entity="tasks", filters={"flagged": True})
@@ -85,7 +85,7 @@ class TestSearch:
     @pytest.mark.asyncio
     async def test_search_with_tags_filter(self):
         """Test search with tags filter."""
-        with patch("omnifocus_mcp.mcp_tools.query.search.execute_omnijs_with_params") as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"count": 0, "entity": "tasks", "items": []}
 
             await search(entity="tasks", filters={"tags": ["urgent", "work"]})
@@ -96,7 +96,7 @@ class TestSearch:
     @pytest.mark.asyncio
     async def test_search_with_status_filter(self):
         """Test search with status filter."""
-        with patch("omnifocus_mcp.mcp_tools.query.search.execute_omnijs_with_params") as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"count": 0, "entity": "tasks", "items": []}
 
             await search(entity="tasks", filters={"status": ["Available", "DueSoon"]})
@@ -107,7 +107,7 @@ class TestSearch:
     @pytest.mark.asyncio
     async def test_search_with_project_id_filter(self):
         """Test search with project_id filter."""
-        with patch("omnifocus_mcp.mcp_tools.query.search.execute_omnijs_with_params") as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"count": 0, "entity": "tasks", "items": []}
 
             await search(entity="tasks", filters={"project_id": "proj123"})
@@ -118,7 +118,7 @@ class TestSearch:
     @pytest.mark.asyncio
     async def test_search_with_project_name_filter(self):
         """Test search with project_name filter."""
-        with patch("omnifocus_mcp.mcp_tools.query.search.execute_omnijs_with_params") as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"count": 0, "entity": "tasks", "items": []}
 
             await search(entity="tasks", filters={"project_name": "Work"})
@@ -129,7 +129,7 @@ class TestSearch:
     @pytest.mark.asyncio
     async def test_search_with_folder_id_filter(self):
         """Test search with folder_id filter for projects."""
-        with patch("omnifocus_mcp.mcp_tools.query.search.execute_omnijs_with_params") as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"count": 0, "entity": "projects", "items": []}
 
             await search(entity="projects", filters={"folder_id": "folder123"})
@@ -140,7 +140,7 @@ class TestSearch:
     @pytest.mark.asyncio
     async def test_search_with_due_within_filter(self):
         """Test search with due_within filter."""
-        with patch("omnifocus_mcp.mcp_tools.query.search.execute_omnijs_with_params") as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"count": 0, "entity": "tasks", "items": []}
 
             await search(entity="tasks", filters={"due_within": 7})
@@ -151,7 +151,7 @@ class TestSearch:
     @pytest.mark.asyncio
     async def test_search_with_deferred_until_filter(self):
         """Test search with deferred_until filter."""
-        with patch("omnifocus_mcp.mcp_tools.query.search.execute_omnijs_with_params") as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"count": 0, "entity": "tasks", "items": []}
 
             await search(entity="tasks", filters={"deferred_until": 3})
@@ -162,7 +162,7 @@ class TestSearch:
     @pytest.mark.asyncio
     async def test_search_with_planned_within_filter(self):
         """Test search with planned_within filter."""
-        with patch("omnifocus_mcp.mcp_tools.query.search.execute_omnijs_with_params") as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"count": 0, "entity": "tasks", "items": []}
 
             await search(entity="tasks", filters={"planned_within": 7})
@@ -173,7 +173,7 @@ class TestSearch:
     @pytest.mark.asyncio
     async def test_search_with_has_note_filter(self):
         """Test search with has_note filter."""
-        with patch("omnifocus_mcp.mcp_tools.query.search.execute_omnijs_with_params") as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"count": 0, "entity": "tasks", "items": []}
 
             await search(entity="tasks", filters={"has_note": True})
@@ -184,7 +184,7 @@ class TestSearch:
     @pytest.mark.asyncio
     async def test_search_with_available_filter(self):
         """Test search with available filter for projects."""
-        with patch("omnifocus_mcp.mcp_tools.query.search.execute_omnijs_with_params") as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"count": 0, "entity": "projects", "items": []}
 
             await search(entity="projects", filters={"available": True})
@@ -195,7 +195,7 @@ class TestSearch:
     @pytest.mark.asyncio
     async def test_search_with_fields(self):
         """Test search with specific fields."""
-        with patch("omnifocus_mcp.mcp_tools.query.search.execute_omnijs_with_params") as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"count": 0, "entity": "tasks", "items": []}
 
             await search(entity="tasks", fields=["id", "name", "folderPath"])
@@ -206,7 +206,7 @@ class TestSearch:
     @pytest.mark.asyncio
     async def test_search_with_limit(self):
         """Test search with limit."""
-        with patch("omnifocus_mcp.mcp_tools.query.search.execute_omnijs_with_params") as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"count": 10, "entity": "tasks", "items": []}
 
             await search(entity="tasks", limit=10)
@@ -217,7 +217,7 @@ class TestSearch:
     @pytest.mark.asyncio
     async def test_search_with_sort(self):
         """Test search with sorting."""
-        with patch("omnifocus_mcp.mcp_tools.query.search.execute_omnijs_with_params") as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"count": 0, "entity": "tasks", "items": []}
 
             await search(entity="tasks", sort_by="dueDate", sort_order="desc")
@@ -229,7 +229,7 @@ class TestSearch:
     @pytest.mark.asyncio
     async def test_search_include_completed(self):
         """Test search with include_completed=True."""
-        with patch("omnifocus_mcp.mcp_tools.query.search.execute_omnijs_with_params") as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"count": 0, "entity": "tasks", "items": []}
 
             await search(entity="tasks", include_completed=True)
@@ -240,7 +240,7 @@ class TestSearch:
     @pytest.mark.asyncio
     async def test_search_summary_mode(self):
         """Test search with summary=True returns only count."""
-        with patch("omnifocus_mcp.mcp_tools.query.search.execute_omnijs_with_params") as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"count": 42, "entity": "tasks"}
 
             result = await search(entity="tasks", summary=True)
@@ -255,7 +255,7 @@ class TestSearch:
     @pytest.mark.asyncio
     async def test_search_error_handling(self):
         """Test error handling when OmniJS returns an error."""
-        with patch("omnifocus_mcp.mcp_tools.query.search.execute_omnijs_with_params") as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"error": "Search error: something went wrong"}
 
             result = await search(entity="tasks")
@@ -266,7 +266,7 @@ class TestSearch:
     @pytest.mark.asyncio
     async def test_search_exception_handling(self):
         """Test exception handling."""
-        with patch("omnifocus_mcp.mcp_tools.query.search.execute_omnijs_with_params") as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.side_effect = Exception("Test exception")
 
             result = await search(entity="tasks")
@@ -278,7 +278,7 @@ class TestSearch:
     @pytest.mark.asyncio
     async def test_search_uses_correct_script_name(self):
         """Test that the correct script name is used."""
-        with patch("omnifocus_mcp.mcp_tools.query.search.execute_omnijs_with_params") as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"count": 0, "entity": "tasks", "items": []}
 
             await search(entity="tasks")
@@ -289,7 +289,7 @@ class TestSearch:
     @pytest.mark.asyncio
     async def test_search_passes_includes(self):
         """Test that search passes the includes parameter."""
-        with patch("omnifocus_mcp.mcp_tools.query.search.execute_omnijs_with_params") as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"count": 0, "entity": "tasks", "items": []}
 
             await search(entity="tasks")
@@ -304,7 +304,7 @@ class TestSearch:
     @pytest.mark.asyncio
     async def test_search_with_folder_path_field(self):
         """Test search returns folderPath when requested."""
-        with patch("omnifocus_mcp.mcp_tools.query.search.execute_omnijs_with_params") as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {
                 "count": 1,
                 "entity": "projects",
@@ -321,7 +321,7 @@ class TestSearch:
     @pytest.mark.asyncio
     async def test_search_default_excludes_completed(self):
         """Test that search excludes completed items by default."""
-        with patch("omnifocus_mcp.mcp_tools.query.search.execute_omnijs_with_params") as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"count": 0, "entity": "tasks", "items": []}
 
             await search(entity="tasks")
@@ -332,7 +332,7 @@ class TestSearch:
     @pytest.mark.asyncio
     async def test_search_default_sort_order_asc(self):
         """Test that default sort order is ascending."""
-        with patch("omnifocus_mcp.mcp_tools.query.search.execute_omnijs_with_params") as mock_exec:
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"count": 0, "entity": "tasks", "items": []}
 
             await search(entity="tasks", sort_by="name")

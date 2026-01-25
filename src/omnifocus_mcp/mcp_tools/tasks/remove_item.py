@@ -2,7 +2,7 @@
 
 import asyncio
 
-from ...utils import escape_applescript_string
+from ...applescript_builder import generate_find_clause
 
 
 async def remove_item(
@@ -26,29 +26,14 @@ async def remove_item(
         if not id and not name:
             return "Error: Either 'id' or 'name' must be provided"
 
-        # Escape user input to prevent AppleScript injection
-        escaped_name = escape_applescript_string(name)
-        escaped_id = escape_applescript_string(id or "")
-
         # Build the find clause
-        if escaped_id:
-            if item_type == "project":
-                find_clause = f'set theItem to first flattened project where id = "{escaped_id}"'
-                result_msg = "Project removed successfully (by ID)"
-            else:
-                find_clause = f'set theItem to first flattened task where id = "{escaped_id}"'
-                result_msg = "Task removed successfully (by ID)"
+        find_clause = generate_find_clause(item_type, "theItem", id, name)
+
+        # Build result message
+        if id:
+            result_msg = f"{item_type.capitalize()} removed successfully (by ID)"
         else:
-            if item_type == "project":
-                find_clause = (
-                    f'set theItem to first flattened project where its name = "{escaped_name}"'
-                )
-                result_msg = f"Project removed successfully: {escaped_name}"
-            else:
-                find_clause = (
-                    f'set theItem to first flattened task where its name = "{escaped_name}"'
-                )
-                result_msg = f"Task removed successfully: {escaped_name}"
+            result_msg = f"{item_type.capitalize()} removed successfully: {name}"
 
         script = f'''
 tell application "OmniFocus"

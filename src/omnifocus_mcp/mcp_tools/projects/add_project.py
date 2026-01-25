@@ -2,7 +2,7 @@
 
 import asyncio
 
-from ...dates import create_date_assignment
+from ...applescript_builder import process_date_params
 from ...tags import generate_add_tags_applescript
 from ...utils import escape_applescript_string
 
@@ -41,32 +41,15 @@ async def add_project(
         escaped_note = escape_applescript_string(note)
         escaped_folder = escape_applescript_string(folder_name or "")
 
-        # Build pre-tell date scripts
-        pre_tell_scripts = []
-        in_tell_assignments = []
-
-        # Handle due date
-        if due_date is not None:
-            pre_script, assignment = create_date_assignment(
-                due_date, "due date", "newProject", "dueDate"
-            )
-            if pre_script:
-                pre_tell_scripts.append(pre_script)
-            if assignment:
-                in_tell_assignments.append(assignment)
-
-        # Handle defer date
-        if defer_date is not None:
-            pre_script, assignment = create_date_assignment(
-                defer_date, "defer date", "newProject", "deferDate"
-            )
-            if pre_script:
-                pre_tell_scripts.append(pre_script)
-            if assignment:
-                in_tell_assignments.append(assignment)
-
-        # Build date pre-script
-        date_pre_script = "\n\n".join(pre_tell_scripts) if pre_tell_scripts else ""
+        # Process date parameters (projects don't have planned_date)
+        date_params = process_date_params(
+            "newProject",
+            due_date=due_date,
+            defer_date=defer_date,
+            include_planned=False,
+        )
+        date_pre_script = date_params.pre_tell_script
+        in_tell_assignments = date_params.in_tell_assignments
 
         # Build project properties
         properties = [f'name:"{escaped_name}"']

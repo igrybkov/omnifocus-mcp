@@ -1,25 +1,10 @@
 // Dump OmniFocus database in a compact, formatted report
 // Params: { hide_completed: boolean, hide_recurring_duplicates: boolean }
+// Requires: common/status_maps.js
 
 try {
     const hideCompleted = params.hide_completed;
     const hideRecurringDuplicates = params.hide_recurring_duplicates;
-
-    // Status mappings
-    const taskStatusMap = {};
-    taskStatusMap[Task.Status.Available] = "avail";
-    taskStatusMap[Task.Status.Blocked] = "block";
-    taskStatusMap[Task.Status.Completed] = "compl";
-    taskStatusMap[Task.Status.Dropped] = "drop";
-    taskStatusMap[Task.Status.DueSoon] = "due";
-    taskStatusMap[Task.Status.Next] = "next";
-    taskStatusMap[Task.Status.Overdue] = "over";
-
-    const projectStatusMap = {};
-    projectStatusMap[Project.Status.Active] = "active";
-    projectStatusMap[Project.Status.Done] = "done";
-    projectStatusMap[Project.Status.Dropped] = "dropped";
-    projectStatusMap[Project.Status.OnHold] = "onHold";
 
     // Format date as M/D
     function formatDate(date) {
@@ -52,7 +37,7 @@ try {
         let taskLine = indent + "\u2022 " + task.name;
 
         // Add status
-        const status = taskStatusMap[task.taskStatus];
+        const status = taskStatusMapAbbrev[task.taskStatus];
         if (status && status !== "avail") {
             taskLine += " #" + status;
         }
@@ -112,7 +97,7 @@ try {
 
             let projectLine = "  P: " + project.name;
             if (project.status !== Project.Status.Active) {
-                projectLine += " #" + projectStatusMap[project.status];
+                projectLine += " #" + projectStatusMapAbbrev[project.status];
             }
             if (project.dueDate) {
                 projectLine += " [" + formatDate(project.dueDate) + "]";
@@ -141,7 +126,7 @@ try {
 
         let projectLine = "P: " + project.name;
         if (project.status !== Project.Status.Active) {
-            projectLine += " #" + projectStatusMap[project.status];
+            projectLine += " #" + projectStatusMapAbbrev[project.status];
         }
         if (project.dueDate) {
             projectLine += " [" + formatDate(project.dueDate) + "]";

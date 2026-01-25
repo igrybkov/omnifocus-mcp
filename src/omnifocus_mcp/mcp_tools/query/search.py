@@ -1,9 +1,8 @@
 """Search OmniFocus database tool."""
 
-import json
 from typing import Any
 
-from ...omnijs import execute_omnijs_with_params
+from ..response import omnijs_json_response
 
 # Shared JS modules for search script
 SEARCH_INCLUDES = [
@@ -53,21 +52,17 @@ async def search(
     Returns:
         JSON string with query results or count
     """
-    try:
-        result = await execute_omnijs_with_params(
-            "search",
-            {
-                "entity": entity,
-                "filters": filters or {},
-                "fields": fields,
-                "limit": limit,
-                "sort_by": sort_by,
-                "sort_order": sort_order,
-                "include_completed": include_completed,
-                "summary": summary,
-            },
-            includes=SEARCH_INCLUDES,
-        )
-        return json.dumps(result, indent=2)
-    except Exception as e:
-        return json.dumps({"error": str(e)})
+    return await omnijs_json_response(
+        "search",
+        {
+            "entity": entity,
+            "filters": filters or {},
+            "fields": fields,
+            "limit": limit,
+            "sort_by": sort_by,
+            "sort_order": sort_order,
+            "include_completed": include_completed,
+            "summary": summary,
+        },
+        includes=SEARCH_INCLUDES,
+    )

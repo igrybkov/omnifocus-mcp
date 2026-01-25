@@ -4,6 +4,7 @@ import json
 from typing import Any
 
 from ..projects.add_project import add_project
+from ..response import build_batch_summary
 from ..tasks.add_task import add_omnifocus_task
 
 
@@ -148,15 +149,4 @@ async def batch_add_items(
                     )
                     processed[i] = True
 
-    # Build summary
-    success_count = sum(1 for r in results if r.get("success"))
-    failure_count = len(results) - success_count
-
-    summary = {
-        "total": len(items),
-        "success": success_count,
-        "failed": failure_count,
-        "results": results,
-    }
-
-    return json.dumps(summary, indent=2)
+    return json.dumps(build_batch_summary(results, len(items)), indent=2)

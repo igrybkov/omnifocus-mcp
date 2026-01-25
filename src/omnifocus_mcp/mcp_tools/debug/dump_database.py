@@ -4,6 +4,9 @@ import json
 
 from ...omnijs import execute_omnijs_with_params
 
+# Shared JS modules for dump_database script
+DUMP_DATABASE_INCLUDES = ["common/status_maps"]
+
 
 async def dump_database(
     hide_completed: bool = True,
@@ -29,6 +32,7 @@ async def dump_database(
                 "hide_completed": hide_completed,
                 "hide_recurring_duplicates": hide_recurring_duplicates,
             },
+            includes=DUMP_DATABASE_INCLUDES,
         )
         # The result might be wrapped in quotes from JSON, handle both cases
         if isinstance(result, dict):

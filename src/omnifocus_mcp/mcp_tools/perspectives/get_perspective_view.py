@@ -1,8 +1,9 @@
 """Get perspective view tool for OmniFocus."""
 
-import json
+from ..response import omnijs_json_response
 
-from ...omnijs import execute_omnijs_with_params
+# Shared JS modules for get_perspective_view script
+PERSPECTIVE_VIEW_INCLUDES = ["common/status_maps"]
 
 
 async def get_perspective_view(
@@ -40,16 +41,13 @@ async def get_perspective_view(
     ]
     fields_to_use = fields if fields else default_fields
 
-    try:
-        result = await execute_omnijs_with_params(
-            "get_perspective_view",
-            {
-                "perspective_name": perspective_name,
-                "limit": limit,
-                "include_metadata": include_metadata,
-                "fields": fields_to_use,
-            },
-        )
-        return json.dumps(result, indent=2)
-    except Exception as e:
-        return json.dumps({"error": str(e)})
+    return await omnijs_json_response(
+        "get_perspective_view",
+        {
+            "perspective_name": perspective_name,
+            "limit": limit,
+            "include_metadata": include_metadata,
+            "fields": fields_to_use,
+        },
+        includes=PERSPECTIVE_VIEW_INCLUDES,
+    )
