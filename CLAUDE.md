@@ -99,6 +99,71 @@ The server uses two complementary scripting approaches:
 | `src/omnifocus_mcp/dates.py` | ISO date parsing and AppleScript date generation |
 | `src/omnifocus_mcp/tags.py` | Tag add/remove/replace AppleScript generation |
 | `src/omnifocus_mcp/omnijs.py` | OmniJS execution via JXA wrapper |
+| `src/omnifocus_mcp/applescript_builder.py` | High-level AppleScript builders (dates, find clause, tags) |
+| `src/omnifocus_mcp/mcp_tools/response.py` | OmniJS JSON response handling, batch summaries |
+
+### Shared JavaScript Modules
+
+Located in `src/omnifocus_mcp/scripts/common/`:
+
+| File | Purpose |
+|------|---------|
+| `status_maps.js` | Task/project status enums to strings (full and abbreviated) |
+| `filters.js` | Filter factory functions, `isWithinDays()` date helper |
+| `field_mappers.js` | Field mapping for tasks/projects/folders, `getFolderPath()` |
+
+### Patterns to Follow (IMPORTANT)
+
+**For AppleScript-based tools (add/edit/remove operations):**
+```python
+from ...applescript_builder import process_date_params, generate_find_clause, generate_tag_modifications
+
+# Process all dates in one call
+date_params = process_date_params("theTask", due_date=..., defer_date=..., planned_date=...)
+date_pre_script = date_params.pre_tell_script
+in_tell_assignments = date_params.in_tell_assignments
+
+# Generate find clause (escapes inputs internally)
+find_clause = generate_find_clause("task", "theTask", item_id=id, item_name=name)
+
+# Generate tag modifications
+tag_mods, tag_changes = generate_tag_modifications("theTask", add_tags, remove_tags, replace_tags)
+```
+
+**For OmniJS-based tools (queries, perspectives):**
+```python
+from ..response import omnijs_json_response
+
+# Includes parameter is optional - pass shared modules needed by the script
+INCLUDES = ["common/status_maps", "common/filters", "common/field_mappers"]
+
+async def my_tool(params...) -> str:
+    return await omnijs_json_response("script_name", {"param": value}, includes=INCLUDES)
+```
+
+**For batch operations:**
+```python
+from ..response import build_batch_summary
+
+results = [{"success": True, ...}, {"success": False, ...}]
+return json.dumps(build_batch_summary(results), indent=2)
+```
+
+**For JavaScript scripts:**
+- Use shared modules via includes parameter in Python
+- Add `// Requires: common/status_maps.js` comment at top of script
+- Use `taskStatusMap`/`projectStatusMap` for full status names
+- Use `taskStatusMapAbbrev`/`projectStatusMapAbbrev` for compact output
+- Use `isWithinDays(date, days, requirePastOrPresent)` for date range checks
+
+### Testing OmniJS-Based Tools
+
+When mocking OmniJS execution in tests, patch at the response module:
+```python
+with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
+    mock_exec.return_value = {"count": 1, "items": [...]}
+    result = await my_tool()
+```
 
 ### Tool Registration
 
