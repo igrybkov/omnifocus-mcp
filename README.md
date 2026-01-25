@@ -2,16 +2,16 @@
 
 A Python-based Model Context Protocol (MCP) server that enables AI assistants like Claude to interact with OmniFocus on macOS. This server provides tools to read, create, edit, and delete tasks and projects in OmniFocus using natural language through AI assistants.
 
-> 🤖 This entire project was written by AI. Yes, even this sentence.
+> 🤖 This entire project was written by AI. Yes, even this sentence. The AI is quite proud of itself.
 
 ## Features
 
 - 🔧 **Comprehensive OmniFocus Integration**: Add, edit, remove, and query tasks and projects
 - 🐍 **Official Python MCP SDK**: Built using the official MCP SDK
-- �� **Stdin/Stdout Transport**: Standard MCP stdio protocol for seamless integration
+- 🔌 **Stdin/Stdout Transport**: Standard MCP stdio protocol for seamless integration
 - ⚡ **UV Support**: Full support for UV package manager, including `uvx` for quick installation
 - 🚀 **Easy Installation**: Install directly from GitHub with one command
-- �� **Modular Design**: Tools organized in separate modules for better maintainability
+- 🧩 **Modular Design**: Tools organized in separate modules for better maintainability
 
 ## Installation
 
@@ -58,9 +58,13 @@ For local development, the repository includes a `.mcp.json` file for MCP client
 
 ### With Claude Desktop
 
-Add this configuration to your Claude Desktop config file:
+The easiest way to configure Claude Desktop (just needs uv):
 
-**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+```bash
+uv tool run --from git+https://github.com/igrybkov/omnifocus-mcp omnifocus-cli add-server ~/Library/Application\ Support/Claude/claude_desktop_config.json
+```
+
+Or manually add this to your config file (`~/Library/Application Support/Claude/claude_desktop_config.json`):
 
 ```json
 {
@@ -93,107 +97,127 @@ After updating the configuration, restart Claude Desktop.
 
 ### Available Tools
 
-The server provides the following tools to interact with OmniFocus:
+The server provides 10 tools to interact with OmniFocus (plus one debug tool for the brave):
 
-#### 1. `add_omnifocus_task`
-Add a new task to OmniFocus.
+#### Task Tools
 
-**Parameters:**
-- `name` (required): The task name
-- `note` (optional): Task description/notes
-- `project` (optional): Project name to add the task to
+| Tool | What it does |
+|------|--------------|
+| `add_omnifocus_task` | Create tasks with all the bells and whistles (dates, flags, tags, estimates, parent tasks) |
+| `edit_item` | Edit tasks or projects (rename, dates, flags, tags, status changes) |
+| `remove_item` | Delete tasks or projects by ID or name |
 
-```
-Example: "Add a task 'Review quarterly report' to my Work project"
-```
+#### Project Tools
 
-#### 2. `add_project`
-Create a new project in OmniFocus.
+| Tool | What it does |
+|------|--------------|
+| `add_project` | Create projects with dates, flags, tags, folder placement, sequential setting |
+| `browse` | Navigate the folder/project/task hierarchy with filtering |
 
-**Parameters:**
-- `name` (required): The project name
-- `note` (optional): Project description
+#### Batch Tools
 
-```
-Example: "Create a new project called 'Website Redesign'"
-```
+| Tool | What it does |
+|------|--------------|
+| `batch_add_items` | Bulk create tasks/projects with hierarchy support (for when you have a lot to do) |
+| `batch_remove_items` | Bulk delete tasks/projects (for when you've done a lot) |
 
-#### 3. `remove_item`
-Remove a task or project from OmniFocus.
+#### Query Tools
 
-**Parameters:**
-- `name` (required): Name of the task or project
-- `item_type` (optional): "task" or "project" (default: "task")
+| Tool | What it does |
+|------|--------------|
+| `search` | Powerful filtered queries by project, tags, status, dates, and more |
 
-```
-Example: "Remove the task 'Buy groceries'"
-```
+#### Perspective Tools
 
-#### 4. `edit_item`
-Edit an existing task or project.
+| Tool | What it does |
+|------|--------------|
+| `list_perspectives` | List built-in and custom perspectives |
+| `get_perspective_view` | View items in a specific perspective |
 
-**Parameters:**
-- `current_name` (required): Current name of the item
-- `new_name` (optional): New name
-- `new_note` (optional): New note/description
-- `mark_complete` (optional): Mark as complete (boolean)
-- `item_type` (optional): "task" or "project" (default: "task")
+### Tool Configuration
 
-```
-Example: "Mark the task 'Finish presentation' as complete"
-Example: "Rename project 'Q1 Goals' to 'Q2 Goals'"
-```
+Tools can be enabled/disabled via environment variables. All tools are enabled by default except `dump_database` (because AI agents love to dump entire databases when you least expect it).
 
-### Debug Tools (--expanded mode)
+**Format**: `TOOL_<TOOL_NAME_UPPERCASE>=true|false`
 
-By default, the `dump_database` tool is hidden to prevent agents from using it unnecessarily. To enable it, run the server with the `--expanded` flag:
-
-```bash
-omnifocus-mcp --expanded
-```
-
-Or in Claude Desktop config:
+To enable the debug tool:
 
 ```json
 {
   "mcpServers": {
     "omnifocus": {
       "command": "omnifocus-mcp",
-      "args": ["--expanded"]
+      "env": {
+        "TOOL_DUMP_DATABASE": "true"
+      }
     }
   }
 }
 ```
 
-#### `dump_database` (expanded mode only)
-Export the current state of your OmniFocus database, including all projects and tasks.
+To disable specific tools:
 
-**Note**: This tool is only available with the `--expanded` flag to avoid unnecessary database dumps.
-
+```json
+{
+  "mcpServers": {
+    "omnifocus": {
+      "command": "omnifocus-mcp",
+      "env": {
+        "TOOL_BATCH_REMOVE_ITEMS": "false"
+      }
+    }
+  }
+}
 ```
-Example: "Show me all my OmniFocus tasks"
+
+#### Debug Tool
+
+| Tool | What it does |
+|------|--------------|
+| `dump_database` | Export the entire OmniFocus database (disabled by default, enable at your own risk) |
+
+### CLI Interface
+
+There's also a CLI for testing tools and managing configuration. Run without installing:
+
+```bash
+# Shorthand for examples below
+alias omnifocus-cli='uv tool run --from git+https://github.com/igrybkov/omnifocus-mcp omnifocus-cli'
+
+# Add server to an MCP config file
+omnifocus-cli add-server ~/Library/Application\ Support/Claude/claude_desktop_config.json
+
+# List available tools
+omnifocus-cli list-tools
+
+# Run tools with named flags
+omnifocus-cli add-omnifocus-task --name "Buy groceries" --project "Shopping" --flagged
+omnifocus-cli search --entity tasks --filters '{"flagged": true}'
+
+# Generic call with JSON arguments
+omnifocus-cli call search '{"entity": "tasks", "filters": {"due_within": 3}}'
 ```
 
 ## Project Structure
 
 ```
 src/omnifocus_mcp/
-├── __init__.py              # Package initialization
 ├── server.py                # Main server and tool registration
+├── cli.py                   # CLI interface
 ├── utils.py                 # Utility functions (AppleScript escaping)
-└── mcp_tools/               # MCP tools package
-    ├── __init__.py
-    ├── tasks/               # Task-related tools
-    │   ├── __init__.py
-    │   ├── add_task.py      # Add new tasks
-    │   ├── edit_item.py     # Edit tasks/projects
-    │   └── remove_item.py   # Remove tasks/projects
-    ├── projects/            # Project-related tools
-    │   ├── __init__.py
-    │   └── add_project.py   # Add new projects
-    └── debug/               # Debug tools
-        ├── __init__.py
-        └── dump_database.py # Database dump (--expanded only)
+├── dates.py                 # Date parsing and AppleScript generation
+├── tags.py                  # Tag modification AppleScript
+├── omnijs.py                # OmniJS execution via JXA
+├── applescript_builder.py   # High-level AppleScript builders
+├── scripts/                 # OmniJS scripts
+│   └── common/              # Shared JS modules
+└── mcp_tools/
+    ├── tasks/               # add_task, edit_item, remove_item
+    ├── projects/            # add_project, browse
+    ├── batch/               # batch_add, batch_remove
+    ├── query/               # search
+    ├── perspectives/        # list_perspectives, get_perspective_view
+    └── debug/               # dump_database
 ```
 
 ## Development
@@ -203,9 +227,6 @@ src/omnifocus_mcp/
 The project includes a comprehensive test suite using pytest:
 
 ```bash
-# Install development dependencies
-pip install -e ".[dev]"
-
 # Run all tests
 pytest
 
@@ -219,12 +240,6 @@ pytest tests/test_tasks.py
 pytest --cov=omnifocus_mcp
 ```
 
-The test suite includes:
-- **Unit tests** for all tools (tasks, projects, debug)
-- **Security tests** for AppleScript injection prevention
-- **Integration tests** for tool registration and CLI behavior
-- **27 total tests** covering core functionality
-
 ## Requirements
 
 - macOS (OmniFocus is macOS-only)
@@ -233,11 +248,11 @@ The test suite includes:
 
 ## How It Works
 
-This MCP server uses AppleScript to communicate with OmniFocus. When you make requests through Claude or another MCP client:
+This MCP server uses AppleScript for CRUD operations and OmniJS (via JXA) for queries. When you make requests through Claude or another MCP client:
 
 1. The client sends a request via stdin
 2. The MCP server processes the request
-3. AppleScript commands are executed to interact with OmniFocus
+3. AppleScript/OmniJS commands are executed to interact with OmniFocus
 4. Results are returned via stdout to the client
 
 All user inputs are properly escaped to prevent AppleScript injection attacks.
@@ -248,7 +263,7 @@ This project was inspired by [themotionmachine/OmniFocus-MCP](https://github.com
 
 ### Key Improvements
 
-- **Efficient Database Access**: The `dump_database` tool is hidden by default (requires `--expanded` flag) to prevent AI agents from unnecessarily dumping entire databases. This is critical for users with large OmniFocus databases where frequent dumps become a performance bottleneck.
+- **Efficient Database Access**: The `dump_database` tool is hidden by default to prevent AI agents from unnecessarily dumping entire databases. This is critical for users with large OmniFocus databases where frequent dumps become a performance bottleneck.
 
 - **Rapid Feature Adoption**: Independent development allows quick implementation of new OmniFocus features (like Planned dates) without waiting for upstream project maintainers.
 
@@ -262,7 +277,7 @@ This project was inspired by [themotionmachine/OmniFocus-MCP](https://github.com
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please feel free to submit a Pull Request. The AI promises not to be jealous.
 
 ## License
 
