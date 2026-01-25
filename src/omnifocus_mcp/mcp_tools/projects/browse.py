@@ -53,6 +53,8 @@ async def browse(
                 Supports natural language like due_within
             - was_deferred: Filter to Active projects that had a defer date in the past
                 (have become available after being deferred) (boolean)
+            - stalled: Filter to Active projects that are not deferred but have no
+                available tasks (no tasks with Available or DueSoon status) (boolean)
             - has_note: Filter by note presence (boolean)
             - available: Filter to Active projects that are not deferred (boolean)
         task_filters: Optional filters for tasks when include_tasks=True (all AND logic):

@@ -51,6 +51,8 @@ async def search(
                 finding stale items. Supports natural language like due_within
             - was_deferred: For projects, filter to Active projects that had a defer
                 date in the past (have become available after being deferred)
+            - stalled: For projects, filter to Active projects that are not deferred
+                but have no available tasks (no tasks with Available or DueSoon status)
             - has_note: Filter by note presence
             - available: For projects, filter to Active + not deferred
         fields: Specific fields to return (reduces response size). Task fields include:

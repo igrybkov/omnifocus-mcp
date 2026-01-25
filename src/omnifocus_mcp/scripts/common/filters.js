@@ -295,6 +295,26 @@ function createProjectFilter(filters, options) {
             }
         }
 
+        // Filter by stalled (Active projects with no available tasks)
+        if (filters.stalled === true) {
+            // Must be active status
+            if (project.status !== Project.Status.Active) {
+                return false;
+            }
+            // Must not be deferred (defer date must be null or in the past)
+            if (project.deferDate && project.deferDate > new Date()) {
+                return false;
+            }
+            // Check for available tasks - if any task is Available or DueSoon, not stalled
+            var hasAvailableTask = project.tasks.some(function(task) {
+                return task.taskStatus === Task.Status.Available ||
+                       task.taskStatus === Task.Status.DueSoon;
+            });
+            if (hasAvailableTask) {
+                return false;
+            }
+        }
+
         return true;
     };
 }
