@@ -43,7 +43,7 @@ def parse_natural_date(value: str) -> datetime | None:
 
 
 # Filters that expect N days from now
-_DAYS_FILTERS = ("due_within", "deferred_until", "planned_within")
+_DAYS_FILTERS = ("due_within", "deferred_until", "planned_within", "deferred_on")
 
 
 def preprocess_date_filters(filters: dict[str, Any]) -> dict[str, Any]:

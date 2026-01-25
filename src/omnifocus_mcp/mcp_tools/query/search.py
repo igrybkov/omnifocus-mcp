@@ -41,6 +41,8 @@ async def search(
                 "next 3 days", "this week", "tomorrow", or numeric days
             - deferred_until: Items deferred becoming available within N days.
                 Supports natural language like due_within
+            - deferred_on: Items where defer date equals specific date. Useful for
+                finding "tasks scheduled to start today". Supports natural language
             - planned_within: Tasks planned within N days from today (OmniFocus 4.7+).
                 Supports natural language like due_within
             - has_note: Filter by note presence

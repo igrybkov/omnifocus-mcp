@@ -47,6 +47,8 @@ async def browse(
                 "next 3 days", "this week", "tomorrow", or numeric days
             - deferred_until: Projects deferred becoming available within N days.
                 Supports natural language like due_within
+            - deferred_on: Projects where defer date equals specific date.
+                Supports natural language like due_within
             - has_note: Filter by note presence (boolean)
             - available: Filter to Active projects that are not deferred (boolean)
         task_filters: Optional filters for tasks when include_tasks=True (all AND logic):
@@ -54,6 +56,7 @@ async def browse(
             - tags: Filter by tag names (list, OR logic)
             - status: Filter by task status (list, OR logic)
             - due_within: Tasks due within N days from today. Supports natural language
+            - deferred_on: Tasks where defer date equals specific date. Supports natural language
             - planned_within: Tasks planned within N days from today. Supports natural language
         include_completed: Include completed/dropped projects and tasks (default: False)
         max_depth: Maximum folder depth to traverse (None = unlimited)
