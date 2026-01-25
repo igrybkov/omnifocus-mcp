@@ -5,6 +5,7 @@ import inspect
 import json
 import sys
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any, Union, get_args, get_origin
 
 import cyclopts
@@ -166,6 +167,60 @@ def list_tools() -> None:
     print()
     print("Use 'omnifocus-cli call <tool_name> <json_args>' to call any tool directly.")
     print("Use 'omnifocus-cli <command> --help' for detailed command options.")
+
+
+@app.command(name="add-server")
+def add_server(
+    config_path: str,
+    *,
+    name: str = "omnifocus",
+) -> None:
+    """Add omnifocus-mcp server to an MCP configuration file.
+
+    Creates the file if it doesn't exist. Merges with existing config if present.
+
+    Args:
+        config_path: Path to the MCP config file (e.g., .mcp.json, claude_desktop_config.json)
+        name: Server name in the config (default: omnifocus)
+    """
+    path = Path(config_path).expanduser().resolve()
+
+    # Load existing config or start fresh
+    if path.exists():
+        try:
+            config = json.loads(path.read_text())
+        except json.JSONDecodeError as e:
+            print(f"Error: Invalid JSON in {path}: {e}", file=sys.stderr)
+            sys.exit(1)
+    else:
+        config = {}
+
+    # Ensure mcpServers key exists
+    if "mcpServers" not in config:
+        config["mcpServers"] = {}
+
+    # Check if server already exists
+    if name in config["mcpServers"]:
+        print(f"Warning: Server '{name}' already exists in config, overwriting.", file=sys.stderr)
+
+    # Build server config
+    config["mcpServers"][name] = {
+        "command": "uv",
+        "args": [
+            "tool",
+            "run",
+            "--from",
+            "git+https://github.com/igrybkov/omnifocus-mcp",
+            "omnifocus-mcp",
+        ],
+    }
+
+    # Ensure parent directory exists
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Write config
+    path.write_text(json.dumps(config, indent=2) + "\n")
+    print(f"Added '{name}' server to {path}")
 
 
 def main() -> None:
