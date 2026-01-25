@@ -1,6 +1,6 @@
 """OmniFocus MCP Server - Main server implementation."""
 
-import argparse
+import os
 
 from mcp.server.fastmcp import FastMCP
 
@@ -12,65 +12,80 @@ from .mcp_tools.perspectives.list_perspectives import list_perspectives
 from .mcp_tools.projects.add_project import add_project
 from .mcp_tools.projects.tree import get_tree
 from .mcp_tools.query.query import query_omnifocus
-
-# Import tools from mcp_tools package
 from .mcp_tools.tasks.add_task import add_omnifocus_task
 from .mcp_tools.tasks.edit_item import edit_item
 from .mcp_tools.tasks.remove_item import remove_item
 
-# Create MCP server instance
-mcp = FastMCP("OmniFocus MCP Server")
+# Tool defaults: all enabled except dump_database
+TOOL_DEFAULTS = {
+    "dump_database": False,
+}
+
+# All available tools
+_TOOLS = [
+    add_omnifocus_task,
+    edit_item,
+    remove_item,
+    add_project,
+    get_tree,
+    batch_add_items,
+    batch_remove_items,
+    query_omnifocus,
+    list_perspectives,
+    get_perspective_view,
+    dump_database,
+]
 
 
-def register_tools(expanded: bool = False):
+def is_tool_enabled(tool_name: str) -> bool:
     """
-    Register MCP tools based on configuration.
+    Check if a tool is enabled via environment variable.
+
+    Environment variable format: TOOL_<TOOL_NAME_UPPERCASE>
+    Example: TOOL_DUMP_DATABASE=true
 
     Args:
-        expanded: If True, include debug tools like dump_database
+        tool_name: The tool function name (e.g., "dump_database")
+
+    Returns:
+        True if the tool should be registered, False otherwise
     """
-    # Register core task tools
-    mcp.tool()(add_omnifocus_task)
-    mcp.tool()(edit_item)
-    mcp.tool()(remove_item)
+    env_var = f"TOOL_{tool_name.upper()}"
+    value = os.environ.get(env_var, "").lower()
 
-    # Register project tools
-    mcp.tool()(add_project)
-    mcp.tool()(get_tree)
+    if value:
+        return value in ("1", "true", "yes")
 
-    # Register batch tools
-    mcp.tool()(batch_add_items)
-    mcp.tool()(batch_remove_items)
+    # Use tool-specific default, or True if not specified
+    return TOOL_DEFAULTS.get(tool_name, True)
 
-    # Register query tools
-    mcp.tool()(query_omnifocus)
 
-    # Register perspective tools
-    mcp.tool()(list_perspectives)
-    mcp.tool()(get_perspective_view)
+def mcp() -> FastMCP:
+    """
+    Factory function for creating the MCP server.
 
-    # Register debug tools only if expanded mode is enabled
-    if expanded:
-        mcp.tool()(dump_database)
+    Creates a FastMCP instance and registers tools based on environment
+    variable configuration. Each tool can be enabled/disabled via
+    TOOL_<TOOL_NAME_UPPERCASE>=true/false.
+
+    All tools are enabled by default except dump_database.
+
+    Returns:
+        Configured FastMCP server instance
+    """
+    server = FastMCP("OmniFocus MCP Server")
+
+    for tool_fn in _TOOLS:
+        if is_tool_enabled(tool_fn.__name__):
+            server.tool()(tool_fn)
+
+    return server
 
 
 def main():
     """Main entry point for the MCP server."""
-    # Parse command-line arguments
-    parser = argparse.ArgumentParser(description="OmniFocus MCP Server")
-    parser.add_argument(
-        "--expanded",
-        action="store_true",
-        help="Enable expanded mode with additional debug tools (including dump_database)",
-    )
-
-    args = parser.parse_args()
-
-    # Register tools based on configuration
-    register_tools(expanded=args.expanded)
-
-    # Run the server with stdio transport (stdin/stdout)
-    mcp.run(transport="stdio")
+    server = mcp()
+    server.run(transport="stdio")
 
 
 if __name__ == "__main__":
