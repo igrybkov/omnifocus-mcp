@@ -40,8 +40,8 @@ Launches web UI for interactively testing all tools.
 ```bash
 python -c "
 import asyncio
-from omnifocus_mcp.mcp_tools.query.query import query_omnifocus
-print(asyncio.run(query_omnifocus('tasks', filters={'flagged': True})))
+from omnifocus_mcp.mcp_tools.query.search import search
+print(asyncio.run(search('tasks', filters={'flagged': True})))
 "
 ```
 Tools are just async functions - call them directly.
@@ -52,14 +52,14 @@ Tools are just async functions - call them directly.
 uv run omnifocus-cli list-tools
 
 # Named subcommands with flags
-uv run omnifocus-cli add-task --name "Buy groceries" --project "Shopping" --flagged
-uv run omnifocus-cli query --entity tasks --filters '{"flagged": true}'
+uv run omnifocus-cli add-omnifocus-task --name "Buy groceries" --project "Shopping" --flagged
+uv run omnifocus-cli search --entity tasks --filters '{"flagged": true}'
 uv run omnifocus-cli list-perspectives
-uv run omnifocus-cli get-perspective "Flagged"
+uv run omnifocus-cli get-perspective-view "Flagged"
 
 # Generic call with JSON arguments
 uv run omnifocus-cli call add_omnifocus_task '{"name": "Buy groceries", "project": "Shopping"}'
-uv run omnifocus-cli call query_omnifocus '{"entity": "tasks", "filters": {"due_within": 3}}'
+uv run omnifocus-cli call search '{"entity": "tasks", "filters": {"due_within": 3}}'
 ```
 
 ## Architecture
@@ -71,9 +71,9 @@ Tools are organized by domain in `src/omnifocus_mcp/mcp_tools/`:
 ```
 mcp_tools/
 ├── tasks/           # add_omnifocus_task, edit_item, remove_item
-├── projects/        # add_project, get_tree
+├── projects/        # add_project, browse
 ├── batch/           # batch_add_items, batch_remove_items
-├── query/           # query_omnifocus
+├── query/           # search
 ├── perspectives/    # list_perspectives, get_perspective_view
 └── debug/           # dump_database (--expanded only)
 ```
@@ -89,7 +89,7 @@ The server uses two complementary scripting approaches:
 2. **OmniJS** (via JXA wrapper) - For queries and database inspection
    - Provides access to `flattenedTasks`, `flattenedProjects`, `flattenedFolders` globals
    - Required for `Perspective.BuiltIn.*` and `Perspective.Custom.all`
-   - Used by: `query_omnifocus`, `get_tree`, `list_perspectives`, `get_perspective_view`, `dump_database`
+   - Used by: `search`, `browse`, `list_perspectives`, `get_perspective_view`, `dump_database`
 
 ### Core Utilities
 
@@ -115,19 +115,20 @@ The server uses two complementary scripting approaches:
 
 ### Project Tools
 - `add_project` - Create projects with properties (dates, flags, tags, folder, sequential)
-- `get_tree` - Hierarchical tree of folders, projects, and tasks with filtering. Supports:
+- `browse` - Hierarchical tree of folders, projects, and tasks with filtering. Supports:
   - `parent_id`/`parent_name` - Start from specific folder (partial name matching)
   - `summary=True` - Return only counts (projectCount, folderCount, taskCount)
-  - `fields` - Select specific fields to reduce response size
+  - `fields` - Select specific fields to reduce response size (includes `folderPath`)
   - `include_folders`/`include_projects`/`include_tasks` - Control what to include
-  - Filters: status, flagged, sequential, tags, due_within, deferred_until, has_note
+  - `filters` - Project filters: status, flagged, sequential, tags, due_within, deferred_until, has_note, available
+  - `task_filters` - Task filters (when include_tasks=True): flagged, tags, status, due_within, planned_within
 
 ### Batch Tools
 - `batch_add_items` - Bulk create tasks/projects with hierarchy support (tempId/parentTempId)
 - `batch_remove_items` - Bulk delete tasks/projects
 
 ### Query Tools
-- `query_omnifocus` - Powerful filtered queries (by project, tags, status, dates, planned_within)
+- `search` - Powerful filtered queries (by project, tags, status, dates, planned_within, folderPath)
 
 ### Perspective Tools
 - `list_perspectives` - List built-in and custom perspectives
