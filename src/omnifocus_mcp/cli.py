@@ -4,6 +4,7 @@ import asyncio
 import inspect
 import json
 import sys
+import types
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Union, get_args, get_origin
@@ -44,7 +45,8 @@ def _is_json_type(hint: Any) -> bool:
     origin = get_origin(hint)
 
     # Handle Union types (e.g., list[str] | None)
-    if origin is Union:
+    # types.UnionType is for X | Y syntax, typing.Union is for Union[X, Y]
+    if origin is Union or isinstance(hint, types.UnionType):
         args = get_args(hint)
         return any(_is_json_type(arg) for arg in args if arg is not type(None))
 
