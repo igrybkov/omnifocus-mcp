@@ -5,7 +5,7 @@ A Python-based Model Context Protocol (MCP) server that enables AI assistants li
 ## Features
 
 - 🔧 **Comprehensive OmniFocus Integration**: Add, edit, remove, and query tasks and projects
-- 🐍 **Official Python MCP SDK**: Built using the official MCP SDK with FastMCP
+- 🐍 **Official Python MCP SDK**: Built using the official MCP SDK
 - �� **Stdin/Stdout Transport**: Standard MCP stdio protocol for seamless integration
 - ⚡ **UV Support**: Full support for UV package manager, including `uvx` for quick installation
 - 🚀 **Easy Installation**: Install directly from GitHub with one command
@@ -255,7 +255,7 @@ This project was inspired by [themotionmachine/OmniFocus-MCP](https://github.com
 ### Technical Stack
 
 - **Python**: More convenient development experience with modern tooling
-- **Official MCP SDK**: Uses FastMCP for cleaner, more maintainable code
+- **Official MCP SDK**: Built with the official Python MCP SDK
 - **UV Package Manager**: Modern Python package management with simple installation via `uvx`
 
 ## Contributing
