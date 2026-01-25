@@ -207,7 +207,11 @@ def load_script(name: str) -> str:
     return script_path.read_text(encoding="utf-8")
 
 
-async def execute_omnijs_with_params(script_name: str, params: dict[str, Any]) -> dict[str, Any]:
+async def execute_omnijs_with_params(
+    script_name: str,
+    params: dict[str, Any],
+    includes: list[str] | None = None,
+) -> dict[str, Any]:
     """
     Execute a parameterized OmniJS script inside OmniFocus.
 
@@ -217,6 +221,9 @@ async def execute_omnijs_with_params(script_name: str, params: dict[str, Any]) -
     Args:
         script_name: Name of the script in scripts/ directory (without .js)
         params: Parameters to pass to the script as a dict
+        includes: List of scripts to include before the main script.
+            Scripts are loaded from scripts/ directory (e.g., "common/status_maps").
+            They are concatenated in order before the main script.
 
     Returns:
         Parsed JSON result from the script
@@ -225,7 +232,16 @@ async def execute_omnijs_with_params(script_name: str, params: dict[str, Any]) -
         RuntimeError: If script execution fails
         FileNotFoundError: If script file doesn't exist
     """
-    script_content = load_script(script_name)
+    # Load and concatenate included scripts
+    script_parts = []
+    if includes:
+        for include_name in includes:
+            script_parts.append(load_script(include_name))
+
+    # Add the main script
+    script_parts.append(load_script(script_name))
+
+    script_content = "\n".join(script_parts)
 
     # Build osascript command with -e flags
     # Three -e arguments: params definition, script content, JXA wrapper
