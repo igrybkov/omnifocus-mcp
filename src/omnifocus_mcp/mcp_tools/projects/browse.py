@@ -1,15 +1,23 @@
-"""Get tree tool - hierarchical view of folders, projects, and tasks."""
+"""Browse tool - hierarchical view of folders, projects, and tasks."""
 
 import json
 from typing import Any
 
 from ...omnijs import execute_omnijs_with_params
 
+# Shared JS modules for browse script
+BROWSE_INCLUDES = [
+    "common/status_maps",
+    "common/filters",
+    "common/field_mappers",
+]
 
-async def get_tree(
+
+async def browse(
     parent_id: str | None = None,
     parent_name: str | None = None,
     filters: dict[str, Any] | None = None,
+    task_filters: dict[str, Any] | None = None,
     include_completed: bool = False,
     max_depth: int | None = None,
     include_root_projects: bool = True,
@@ -20,7 +28,7 @@ async def get_tree(
     include_tasks: bool = False,
 ) -> str:
     """
-    Get a hierarchical tree of folders, projects, and tasks.
+    Browse the hierarchical tree of folders, projects, and tasks.
 
     Returns a tree structure showing the folder/project/task hierarchy in OmniFocus.
     Supports filtering by various criteria and starting from a specific folder.
@@ -38,15 +46,22 @@ async def get_tree(
             - due_within: Projects due within N days from today
             - deferred_until: Projects deferred becoming available within N days
             - has_note: Filter by note presence (boolean)
+            - available: Filter to Active projects that are not deferred (boolean)
+        task_filters: Optional filters for tasks when include_tasks=True (all AND logic):
+            - flagged: Filter by flagged status (boolean)
+            - tags: Filter by tag names (list, OR logic)
+            - status: Filter by task status (list, OR logic)
+            - due_within: Tasks due within N days from today
+            - planned_within: Tasks planned within N days from today
         include_completed: Include completed/dropped projects and tasks (default: False)
         max_depth: Maximum folder depth to traverse (None = unlimited)
         include_root_projects: Include projects at root level (not in any folder) (default: True)
         summary: If True, return only counts (projectCount, folderCount, taskCount) without tree
         fields: Specific project/task fields to return (reduces response size).
             Project fields: id, name, status, sequential, flagged, dueDate, deferDate,
-            estimatedMinutes, taskCount, tagNames.
+            estimatedMinutes, taskCount, tagNames, folderPath.
             Task fields: id, name, flagged, dueDate, deferDate, estimatedMinutes, tagNames,
-            completed, note.
+            completed, note, folderPath.
             If not specified, returns all fields.
         include_folders: Include folder nodes in the tree (default: True)
         include_projects: Include project nodes in the tree (default: True)
@@ -75,11 +90,12 @@ async def get_tree(
     """
     try:
         result = await execute_omnijs_with_params(
-            "tree",
+            "browse",
             {
                 "parent_id": parent_id,
                 "parent_name": parent_name,
                 "filters": filters or {},
+                "task_filters": task_filters or {},
                 "include_completed": include_completed,
                 "max_depth": max_depth,
                 "include_root_projects": include_root_projects,
@@ -89,6 +105,7 @@ async def get_tree(
                 "include_projects": include_projects,
                 "include_tasks": include_tasks,
             },
+            includes=BROWSE_INCLUDES,
         )
         return json.dumps(result, indent=2)
     except Exception as e:

@@ -10,8 +10,8 @@ from .mcp_tools.debug.dump_database import dump_database
 from .mcp_tools.perspectives.get_perspective_view import get_perspective_view
 from .mcp_tools.perspectives.list_perspectives import list_perspectives
 from .mcp_tools.projects.add_project import add_project
-from .mcp_tools.projects.tree import get_tree
-from .mcp_tools.query.query import query_omnifocus
+from .mcp_tools.projects.browse import browse
+from .mcp_tools.query.search import search
 from .mcp_tools.tasks.add_task import add_omnifocus_task
 from .mcp_tools.tasks.edit_item import edit_item
 from .mcp_tools.tasks.remove_item import remove_item
@@ -27,10 +27,10 @@ _TOOLS = [
     edit_item,
     remove_item,
     add_project,
-    get_tree,
+    browse,
     batch_add_items,
     batch_remove_items,
-    query_omnifocus,
+    search,
     list_perspectives,
     get_perspective_view,
     dump_database,

@@ -1,5 +1,5 @@
 """Query tools for OmniFocus."""
 
-from .query import query_omnifocus
+from .search import search
 
-__all__ = ["query_omnifocus"]
+__all__ = ["search"]

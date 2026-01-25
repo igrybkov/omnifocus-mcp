@@ -1,12 +1,19 @@
-"""Query OmniFocus database tool."""
+"""Search OmniFocus database tool."""
 
 import json
 from typing import Any
 
 from ...omnijs import execute_omnijs_with_params
 
+# Shared JS modules for search script
+SEARCH_INCLUDES = [
+    "common/status_maps",
+    "common/filters",
+    "common/field_mappers",
+]
 
-async def query_omnifocus(
+
+async def search(
     entity: str,
     filters: dict[str, Any] | None = None,
     fields: list[str] | None = None,
@@ -17,7 +24,7 @@ async def query_omnifocus(
     summary: bool = False,
 ) -> str:
     """
-    Query OmniFocus database with powerful filters.
+    Search OmniFocus database with powerful filters.
 
     Much faster than dump_database for targeted queries.
 
@@ -34,8 +41,9 @@ async def query_omnifocus(
             - deferred_until: Items deferred becoming available within N days
             - planned_within: Tasks planned within N days from today (OmniFocus 4.7+)
             - has_note: Filter by note presence
+            - available: For projects, filter to Active + not deferred
         fields: Specific fields to return (reduces response size). Task fields include:
-            plannedDate, effectivePlannedDate, effectiveDueDate, effectiveDeferDate
+            plannedDate, effectivePlannedDate, effectiveDueDate, effectiveDeferDate, folderPath
         limit: Maximum number of items to return
         sort_by: Field to sort by (name, dueDate, deferDate, plannedDate, modificationDate, etc.)
         sort_order: Sort order: 'asc' or 'desc' (default: 'asc')
@@ -47,7 +55,7 @@ async def query_omnifocus(
     """
     try:
         result = await execute_omnijs_with_params(
-            "query",
+            "search",
             {
                 "entity": entity,
                 "filters": filters or {},
@@ -58,6 +66,7 @@ async def query_omnifocus(
                 "include_completed": include_completed,
                 "summary": summary,
             },
+            includes=SEARCH_INCLUDES,
         )
         return json.dumps(result, indent=2)
     except Exception as e:
