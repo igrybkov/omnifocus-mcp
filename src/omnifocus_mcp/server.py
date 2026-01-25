@@ -9,6 +9,7 @@ from .mcp_tools.tasks.add_task import add_omnifocus_task
 from .mcp_tools.tasks.edit_item import edit_item
 from .mcp_tools.tasks.remove_item import remove_item
 from .mcp_tools.projects.add_project import add_project
+from .mcp_tools.projects.tree import get_tree
 from .mcp_tools.debug.dump_database import dump_database
 from .mcp_tools.batch.batch_add import batch_add_items
 from .mcp_tools.batch.batch_remove import batch_remove_items
@@ -34,6 +35,7 @@ def register_tools(expanded: bool = False):
 
     # Register project tools
     mcp.tool()(add_project)
+    mcp.tool()(get_tree)
 
     # Register batch tools
     mcp.tool()(batch_add_items)

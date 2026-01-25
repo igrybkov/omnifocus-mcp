@@ -18,11 +18,11 @@ class TestRegisterTools:
             # Execute
             register_tools(expanded=False)
 
-            # Verify that tool() was called 9 times (no dump_database)
+            # Verify that tool() was called 10 times (no dump_database)
             # Tools: add_omnifocus_task, edit_item, remove_item, add_project,
-            #        batch_add_items, batch_remove_items, query_omnifocus,
-            #        list_perspectives, get_perspective_view
-            assert mock_mcp.tool.call_count == 9
+            #        get_project_tree, batch_add_items, batch_remove_items,
+            #        query_omnifocus, list_perspectives, get_perspective_view
+            assert mock_mcp.tool.call_count == 10
 
     def test_register_tools_with_expanded(self):
         """Test that tools are registered correctly with expanded flag."""
@@ -34,5 +34,5 @@ class TestRegisterTools:
             # Execute
             register_tools(expanded=True)
 
-            # Verify that tool() was called 10 times (includes dump_database)
-            assert mock_mcp.tool.call_count == 10
+            # Verify that tool() was called 11 times (includes dump_database)
+            assert mock_mcp.tool.call_count == 11

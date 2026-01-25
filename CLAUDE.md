@@ -12,8 +12,8 @@ This is a Python MCP (Model Context Protocol) server that enables AI assistants 
 
 ```bash
 uv sync                    # Install dependencies
-uv run omnifocus-mcp       # Run server (standard mode - 9 tools)
-uv run omnifocus-mcp --expanded  # Run with debug tools (10 tools, includes dump_database)
+uv run omnifocus-mcp       # Run server (standard mode - 10 tools)
+uv run omnifocus-mcp --expanded  # Run with debug tools (11 tools, includes dump_database)
 ```
 
 ### Testing
@@ -34,7 +34,7 @@ Tools are organized by domain in `src/omnifocus_mcp/mcp_tools/`:
 ```
 mcp_tools/
 ├── tasks/           # add_omnifocus_task, edit_item, remove_item
-├── projects/        # add_project
+├── projects/        # add_project, get_tree
 ├── batch/           # batch_add_items, batch_remove_items
 ├── query/           # query_omnifocus
 ├── perspectives/    # list_perspectives, get_perspective_view
@@ -52,7 +52,7 @@ The server uses two complementary scripting approaches:
 2. **OmniJS** (via JXA wrapper) - For queries and database inspection
    - Provides access to `flattenedTasks`, `flattenedProjects`, `flattenedFolders` globals
    - Required for `Perspective.BuiltIn.*` and `Perspective.Custom.all`
-   - Used by: `query_omnifocus`, `list_perspectives`, `get_perspective_view`, `dump_database`
+   - Used by: `query_omnifocus`, `get_tree`, `list_perspectives`, `get_perspective_view`, `dump_database`
 
 ### Core Utilities
 
@@ -66,8 +66,8 @@ The server uses two complementary scripting approaches:
 ### Tool Registration
 
 `server.py` uses FastMCP decorators to register tools:
-- **Standard mode**: 9 core tools
-- **Expanded mode** (`--expanded` flag): Adds dump_database debug tool
+- **Standard mode**: 10 core tools
+- **Expanded mode** (`--expanded` flag): Adds dump_database debug tool (11 total)
 
 ## Tools Reference
 
@@ -78,6 +78,12 @@ The server uses two complementary scripting approaches:
 
 ### Project Tools
 - `add_project` - Create projects with properties (dates, flags, tags, folder, sequential)
+- `get_tree` - Hierarchical tree of folders, projects, and tasks with filtering. Supports:
+  - `parent_id`/`parent_name` - Start from specific folder (partial name matching)
+  - `summary=True` - Return only counts (projectCount, folderCount, taskCount)
+  - `fields` - Select specific fields to reduce response size
+  - `include_folders`/`include_projects`/`include_tasks` - Control what to include
+  - Filters: status, flagged, sequential, tags, due_within, deferred_until, has_note
 
 ### Batch Tools
 - `batch_add_items` - Bulk create tasks/projects with hierarchy support (tempId/parentTempId)
