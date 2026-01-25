@@ -12,7 +12,24 @@ import asyncio
 import json
 import os
 import tempfile
-from typing import Any, Optional
+from functools import lru_cache
+from pathlib import Path
+from typing import Any
+
+# Directory containing JavaScript scripts
+SCRIPTS_DIR = Path(__file__).parent / "scripts"
+
+# Static JXA wrapper that executes parameterized OmniJS scripts
+JXA_WRAPPER = """function run() {
+    try {
+        const app = Application('OmniFocus');
+        app.includeStandardAdditions = true;
+        const wrappedScript = "(function(params) { " + scriptContent + " })(" + JSON.stringify(params) + ");";
+        return app.evaluateJavascript(wrappedScript);
+    } catch (e) {
+        return JSON.stringify({error: e.message});
+    }
+}"""
 
 
 def escape_for_jxa(script: str) -> str:
@@ -25,12 +42,7 @@ def escape_for_jxa(script: str) -> str:
     Returns:
         Escaped script safe for JXA template literal
     """
-    return (
-        script
-        .replace("\\", "\\\\")
-        .replace("`", "\\`")
-        .replace("$", "\\$")
-    )
+    return script.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
 
 
 def create_jxa_wrapper(omnijs_script: str) -> str:
@@ -92,9 +104,12 @@ async def execute_omnijs(script: str) -> dict[str, Any]:
 
         # Execute via osascript
         proc = await asyncio.create_subprocess_exec(
-            "osascript", "-l", "JavaScript", temp_path,
+            "osascript",
+            "-l",
+            "JavaScript",
+            temp_path,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+            stderr=asyncio.subprocess.PIPE,
         )
         stdout, stderr = await proc.communicate()
 
@@ -109,7 +124,7 @@ async def execute_omnijs(script: str) -> dict[str, Any]:
 
         try:
             return json.loads(result_str)
-        except json.JSONDecodeError as e:
+        except json.JSONDecodeError:
             # If it's not JSON, return the raw result
             return {"result": result_str, "raw": True}
 
@@ -146,9 +161,12 @@ async def execute_omnijs_raw(script: str) -> str:
 
         # Execute via osascript
         proc = await asyncio.create_subprocess_exec(
-            "osascript", "-l", "JavaScript", temp_path,
+            "osascript",
+            "-l",
+            "JavaScript",
+            temp_path,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+            stderr=asyncio.subprocess.PIPE,
         )
         stdout, stderr = await proc.communicate()
 
@@ -164,3 +182,79 @@ async def execute_omnijs_raw(script: str) -> str:
             os.unlink(temp_path)
         except OSError:
             pass
+
+
+@lru_cache(maxsize=32)
+def load_script(name: str) -> str:
+    """
+    Load a JavaScript script from the scripts directory.
+
+    Scripts are cached after first load for performance.
+
+    Args:
+        name: Script name without .js extension (e.g., 'list_perspectives')
+              Can include subdirectory (e.g., 'common/status_maps')
+
+    Returns:
+        The script content as a string
+
+    Raises:
+        FileNotFoundError: If the script file doesn't exist
+    """
+    script_path = SCRIPTS_DIR / f"{name}.js"
+    if not script_path.exists():
+        raise FileNotFoundError(f"Script not found: {script_path}")
+    return script_path.read_text(encoding="utf-8")
+
+
+async def execute_omnijs_with_params(script_name: str, params: dict[str, Any]) -> dict[str, Any]:
+    """
+    Execute a parameterized OmniJS script inside OmniFocus.
+
+    This function uses osascript -e flags to avoid temp files entirely.
+    The script receives parameters as a 'params' object.
+
+    Args:
+        script_name: Name of the script in scripts/ directory (without .js)
+        params: Parameters to pass to the script as a dict
+
+    Returns:
+        Parsed JSON result from the script
+
+    Raises:
+        RuntimeError: If script execution fails
+        FileNotFoundError: If script file doesn't exist
+    """
+    script_content = load_script(script_name)
+
+    # Build osascript command with -e flags
+    # Three -e arguments: params definition, script content, JXA wrapper
+    proc = await asyncio.create_subprocess_exec(
+        "osascript",
+        "-l",
+        "JavaScript",
+        "-e",
+        f"var params = {json.dumps(params)};",
+        "-e",
+        f"var scriptContent = {json.dumps(script_content)};",
+        "-e",
+        JXA_WRAPPER,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await proc.communicate()
+
+    if proc.returncode != 0:
+        error_msg = stderr.decode().strip() or "Unknown error"
+        raise RuntimeError(f"OmniJS execution failed: {error_msg}")
+
+    # Parse JSON result
+    result_str = stdout.decode().strip()
+    if not result_str:
+        return {"error": "Empty result from OmniJS"}
+
+    try:
+        return json.loads(result_str)
+    except json.JSONDecodeError:
+        # If it's not JSON, return the raw result
+        return {"result": result_str, "raw": True}
