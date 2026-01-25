@@ -2,6 +2,8 @@
 
 A Python-based Model Context Protocol (MCP) server that enables AI assistants like Claude to interact with OmniFocus on macOS. This server provides tools to read, create, edit, and delete tasks and projects in OmniFocus using natural language through AI assistants.
 
+> 🤖 This entire project was written by AI. Yes, even this sentence.
+
 ## Features
 
 - 🔧 **Comprehensive OmniFocus Integration**: Add, edit, remove, and query tasks and projects
