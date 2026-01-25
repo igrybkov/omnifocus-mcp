@@ -1,6 +1,5 @@
 """Tag utilities for OmniFocus AppleScript generation."""
 
-from typing import Optional
 from .utils import escape_applescript_string
 
 
@@ -74,11 +73,11 @@ def generate_replace_tags_applescript(tags: list[str], item_var: str) -> str:
         AppleScript code to replace the tags
     """
     # First, clear all existing tags
-    clear_script = f'''
+    clear_script = f"""
 set existingTags to tags of {item_var}
 repeat with existingTag in existingTags
     remove existingTag from tags of {item_var}
-end repeat'''
+end repeat"""
 
     # Then add the new tags
     add_script = generate_add_tags_applescript(tags, item_var)

@@ -1,9 +1,10 @@
 """Batch add items tool for OmniFocus."""
 
 import json
-from typing import Any, Optional
-from ..tasks.add_task import add_omnifocus_task
+from typing import Any
+
 from ..projects.add_project import add_project
+from ..tasks.add_task import add_omnifocus_task
 
 
 async def batch_add_items(
@@ -136,13 +137,15 @@ async def batch_add_items(
             # Unresolved dependencies - mark remaining as failed
             for i, item in enumerate(items):
                 if not processed[i]:
-                    results.append({
-                        "index": i,
-                        "type": item.get("type", "task"),
-                        "name": item.get("name", ""),
-                        "success": False,
-                        "error": "Unresolved dependency (parent_temp_id not found)"
-                    })
+                    results.append(
+                        {
+                            "index": i,
+                            "type": item.get("type", "task"),
+                            "name": item.get("name", ""),
+                            "success": False,
+                            "error": "Unresolved dependency (parent_temp_id not found)",
+                        }
+                    )
                     processed[i] = True
 
     # Build summary
@@ -153,7 +156,7 @@ async def batch_add_items(
         "total": len(items),
         "success": success_count,
         "failed": failure_count,
-        "results": results
+        "results": results,
     }
 
     return json.dumps(summary, indent=2)

@@ -1,7 +1,7 @@
 """Tests for server module."""
 
-import pytest
 from unittest.mock import MagicMock, patch
+
 from omnifocus_mcp.server import register_tools
 
 
@@ -10,7 +10,7 @@ class TestRegisterTools:
 
     def test_register_tools_without_expanded(self):
         """Test that tools are registered correctly without expanded flag."""
-        with patch('omnifocus_mcp.server.mcp') as mock_mcp:
+        with patch("omnifocus_mcp.server.mcp") as mock_mcp:
             # Setup mock
             mock_tool_decorator = MagicMock(return_value=lambda x: x)
             mock_mcp.tool.return_value = mock_tool_decorator
@@ -26,7 +26,7 @@ class TestRegisterTools:
 
     def test_register_tools_with_expanded(self):
         """Test that tools are registered correctly with expanded flag."""
-        with patch('omnifocus_mcp.server.mcp') as mock_mcp:
+        with patch("omnifocus_mcp.server.mcp") as mock_mcp:
             # Setup mock
             mock_tool_decorator = MagicMock(return_value=lambda x: x)
             mock_mcp.tool.return_value = mock_tool_decorator

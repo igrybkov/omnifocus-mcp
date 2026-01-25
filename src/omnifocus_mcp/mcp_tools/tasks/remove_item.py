@@ -1,13 +1,13 @@
 """Remove item tool for OmniFocus."""
 
 import asyncio
-from typing import Optional
+
 from ...utils import escape_applescript_string
 
 
 async def remove_item(
     name: str = "",
-    id: Optional[str] = None,
+    id: str | None = None,
     item_type: str = "task",
 ) -> str:
     """
@@ -34,16 +34,20 @@ async def remove_item(
         if escaped_id:
             if item_type == "project":
                 find_clause = f'set theItem to first flattened project where id = "{escaped_id}"'
-                result_msg = f"Project removed successfully (by ID)"
+                result_msg = "Project removed successfully (by ID)"
             else:
                 find_clause = f'set theItem to first flattened task where id = "{escaped_id}"'
-                result_msg = f"Task removed successfully (by ID)"
+                result_msg = "Task removed successfully (by ID)"
         else:
             if item_type == "project":
-                find_clause = f'set theItem to first flattened project where its name = "{escaped_name}"'
+                find_clause = (
+                    f'set theItem to first flattened project where its name = "{escaped_name}"'
+                )
                 result_msg = f"Project removed successfully: {escaped_name}"
             else:
-                find_clause = f'set theItem to first flattened task where its name = "{escaped_name}"'
+                find_clause = (
+                    f'set theItem to first flattened task where its name = "{escaped_name}"'
+                )
                 result_msg = f"Task removed successfully: {escaped_name}"
 
         script = f'''
@@ -57,9 +61,11 @@ return "{result_msg}"
 '''
 
         proc = await asyncio.create_subprocess_exec(
-            'osascript', '-e', script,
+            "osascript",
+            "-e",
+            script,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+            stderr=asyncio.subprocess.PIPE,
         )
         stdout, stderr = await proc.communicate()
 

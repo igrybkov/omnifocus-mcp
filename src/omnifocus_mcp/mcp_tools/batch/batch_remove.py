@@ -1,7 +1,8 @@
 """Batch remove items tool for OmniFocus."""
 
 import json
-from typing import Any, Optional
+from typing import Any
+
 from ..tasks.remove_item import remove_item
 
 
@@ -62,7 +63,7 @@ async def batch_remove_items(
         "total": len(items),
         "success": success_count,
         "failed": failure_count,
-        "results": results
+        "results": results,
     }
 
     return json.dumps(summary, indent=2)

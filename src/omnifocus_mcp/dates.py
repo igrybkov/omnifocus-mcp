@@ -1,7 +1,6 @@
 """Date utilities for OmniFocus AppleScript generation."""
 
 from datetime import datetime
-from typing import Optional
 
 
 def parse_iso_date(iso_string: str) -> tuple[int, int, int, int, int, int]:
@@ -51,10 +50,7 @@ set seconds of {var_name} to {second}"""
 
 
 def create_date_assignment(
-    iso_date: Optional[str],
-    property_name: str,
-    object_var: str,
-    date_var_prefix: str = "dateVar"
+    iso_date: str | None, property_name: str, object_var: str, date_var_prefix: str = "dateVar"
 ) -> tuple[str, str]:
     """
     Generate AppleScript code for date handling with pre-tell and in-tell parts.
@@ -80,7 +76,8 @@ def create_date_assignment(
     # Create unique variable name
     import random
     import string
-    suffix = ''.join(random.choices(string.ascii_lowercase, k=8))
+
+    suffix = "".join(random.choices(string.ascii_lowercase, k=8))
     var_name = f"{date_var_prefix}_{suffix}"
 
     pre_script = create_date_applescript(iso_date, var_name)

@@ -1,24 +1,24 @@
 """Add task tool for OmniFocus."""
 
 import asyncio
-from typing import Optional
-from ...utils import escape_applescript_string
+
 from ...dates import create_date_assignment
 from ...tags import generate_add_tags_applescript
+from ...utils import escape_applescript_string
 
 
 async def add_omnifocus_task(
     name: str,
     note: str = "",
     project: str = "",
-    due_date: Optional[str] = None,
-    defer_date: Optional[str] = None,
-    planned_date: Optional[str] = None,
-    flagged: Optional[bool] = None,
-    estimated_minutes: Optional[int] = None,
-    tags: Optional[list[str]] = None,
-    parent_task_id: Optional[str] = None,
-    parent_task_name: Optional[str] = None,
+    due_date: str | None = None,
+    defer_date: str | None = None,
+    planned_date: str | None = None,
+    flagged: bool | None = None,
+    estimated_minutes: int | None = None,
+    tags: list[str] | None = None,
+    parent_task_id: str | None = None,
+    parent_task_name: str | None = None,
 ) -> str:
     """
     Add a new task to OmniFocus.
@@ -173,7 +173,7 @@ return "Task added successfully to project: {escaped_project}"
 '''
         else:
             # Add to inbox
-            script = f'''
+            script = f"""
 {date_pre_script}
 tell application "OmniFocus"
     tell default document
@@ -182,12 +182,14 @@ tell application "OmniFocus"
     end tell
 end tell
 return "Task added successfully to inbox"
-'''
+"""
 
         proc = await asyncio.create_subprocess_exec(
-            'osascript', '-e', script,
+            "osascript",
+            "-e",
+            script,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+            stderr=asyncio.subprocess.PIPE,
         )
         stdout, stderr = await proc.communicate()
 

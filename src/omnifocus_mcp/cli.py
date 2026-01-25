@@ -3,20 +3,19 @@
 import asyncio
 import json
 import sys
-from typing import Any, Optional
+from typing import Any
 
 import cyclopts
 
+from .mcp_tools.batch.batch_add import batch_add_items
+from .mcp_tools.batch.batch_remove import batch_remove_items
+from .mcp_tools.perspectives.get_perspective_view import get_perspective_view
+from .mcp_tools.perspectives.list_perspectives import list_perspectives
+from .mcp_tools.projects.add_project import add_project
+from .mcp_tools.query.query import query_omnifocus
 from .mcp_tools.tasks.add_task import add_omnifocus_task
 from .mcp_tools.tasks.edit_item import edit_item
 from .mcp_tools.tasks.remove_item import remove_item
-from .mcp_tools.projects.add_project import add_project
-from .mcp_tools.batch.batch_add import batch_add_items
-from .mcp_tools.batch.batch_remove import batch_remove_items
-from .mcp_tools.query.query import query_omnifocus
-from .mcp_tools.perspectives.list_perspectives import list_perspectives
-from .mcp_tools.perspectives.get_perspective_view import get_perspective_view
-
 
 app = cyclopts.App(
     name="omnifocus-cli",
@@ -29,7 +28,7 @@ def _parse_json_arg(value: str, param_name: str) -> Any:
     try:
         return json.loads(value)
     except json.JSONDecodeError as e:
-        raise ValueError(f"Invalid JSON for {param_name}: {e}")
+        raise ValueError(f"Invalid JSON for {param_name}: {e}") from e
 
 
 def _print_result(result: str) -> None:
@@ -48,14 +47,14 @@ def add_task(
     *,
     note: str = "",
     project: str = "",
-    due_date: Optional[str] = None,
-    defer_date: Optional[str] = None,
-    planned_date: Optional[str] = None,
-    flagged: Optional[bool] = None,
-    estimated_minutes: Optional[int] = None,
-    tags: Optional[str] = None,
-    parent_task_id: Optional[str] = None,
-    parent_task_name: Optional[str] = None,
+    due_date: str | None = None,
+    defer_date: str | None = None,
+    planned_date: str | None = None,
+    flagged: bool | None = None,
+    estimated_minutes: int | None = None,
+    tags: str | None = None,
+    parent_task_id: str | None = None,
+    parent_task_name: str | None = None,
 ) -> None:
     """Add a new task to OmniFocus.
 
@@ -73,19 +72,21 @@ def add_task(
         parent_task_name: Parent task name for creating subtasks
     """
     tags_list = _parse_json_arg(tags, "tags") if tags else None
-    result = asyncio.run(add_omnifocus_task(
-        name=name,
-        note=note,
-        project=project,
-        due_date=due_date,
-        defer_date=defer_date,
-        planned_date=planned_date,
-        flagged=flagged,
-        estimated_minutes=estimated_minutes,
-        tags=tags_list,
-        parent_task_id=parent_task_id,
-        parent_task_name=parent_task_name,
-    ))
+    result = asyncio.run(
+        add_omnifocus_task(
+            name=name,
+            note=note,
+            project=project,
+            due_date=due_date,
+            defer_date=defer_date,
+            planned_date=planned_date,
+            flagged=flagged,
+            estimated_minutes=estimated_minutes,
+            tags=tags_list,
+            parent_task_id=parent_task_id,
+            parent_task_name=parent_task_name,
+        )
+    )
     _print_result(result)
 
 
@@ -93,23 +94,23 @@ def add_task(
 def edit(
     *,
     current_name: str = "",
-    id: Optional[str] = None,
+    id: str | None = None,
     new_name: str = "",
     new_note: str = "",
     mark_complete: bool = False,
     item_type: str = "task",
-    new_due_date: Optional[str] = None,
-    new_defer_date: Optional[str] = None,
-    new_planned_date: Optional[str] = None,
-    new_flagged: Optional[bool] = None,
-    new_estimated_minutes: Optional[int] = None,
-    new_status: Optional[str] = None,
-    add_tags: Optional[str] = None,
-    remove_tags: Optional[str] = None,
-    replace_tags: Optional[str] = None,
-    new_sequential: Optional[bool] = None,
-    new_folder_name: Optional[str] = None,
-    new_project_status: Optional[str] = None,
+    new_due_date: str | None = None,
+    new_defer_date: str | None = None,
+    new_planned_date: str | None = None,
+    new_flagged: bool | None = None,
+    new_estimated_minutes: int | None = None,
+    new_status: str | None = None,
+    add_tags: str | None = None,
+    remove_tags: str | None = None,
+    replace_tags: str | None = None,
+    new_sequential: bool | None = None,
+    new_folder_name: str | None = None,
+    new_project_status: str | None = None,
 ) -> None:
     """Edit a task or project in OmniFocus.
 
@@ -137,26 +138,28 @@ def edit(
     remove_tags_list = _parse_json_arg(remove_tags, "remove_tags") if remove_tags else None
     replace_tags_list = _parse_json_arg(replace_tags, "replace_tags") if replace_tags else None
 
-    result = asyncio.run(edit_item(
-        current_name=current_name,
-        id=id,
-        new_name=new_name,
-        new_note=new_note,
-        mark_complete=mark_complete,
-        item_type=item_type,
-        new_due_date=new_due_date,
-        new_defer_date=new_defer_date,
-        new_planned_date=new_planned_date,
-        new_flagged=new_flagged,
-        new_estimated_minutes=new_estimated_minutes,
-        new_status=new_status,
-        add_tags=add_tags_list,
-        remove_tags=remove_tags_list,
-        replace_tags=replace_tags_list,
-        new_sequential=new_sequential,
-        new_folder_name=new_folder_name,
-        new_project_status=new_project_status,
-    ))
+    result = asyncio.run(
+        edit_item(
+            current_name=current_name,
+            id=id,
+            new_name=new_name,
+            new_note=new_note,
+            mark_complete=mark_complete,
+            item_type=item_type,
+            new_due_date=new_due_date,
+            new_defer_date=new_defer_date,
+            new_planned_date=new_planned_date,
+            new_flagged=new_flagged,
+            new_estimated_minutes=new_estimated_minutes,
+            new_status=new_status,
+            add_tags=add_tags_list,
+            remove_tags=remove_tags_list,
+            replace_tags=replace_tags_list,
+            new_sequential=new_sequential,
+            new_folder_name=new_folder_name,
+            new_project_status=new_project_status,
+        )
+    )
     _print_result(result)
 
 
@@ -164,7 +167,7 @@ def edit(
 def remove(
     *,
     name: str = "",
-    id: Optional[str] = None,
+    id: str | None = None,
     item_type: str = "task",
 ) -> None:
     """Remove a task or project from OmniFocus.
@@ -174,11 +177,13 @@ def remove(
         id: ID of the item to remove (preferred)
         item_type: Type of item: 'task' or 'project'
     """
-    result = asyncio.run(remove_item(
-        name=name,
-        id=id,
-        item_type=item_type,
-    ))
+    result = asyncio.run(
+        remove_item(
+            name=name,
+            id=id,
+            item_type=item_type,
+        )
+    )
     _print_result(result)
 
 
@@ -188,13 +193,13 @@ def add_project_cmd(
     name: str,
     *,
     note: str = "",
-    due_date: Optional[str] = None,
-    defer_date: Optional[str] = None,
-    flagged: Optional[bool] = None,
-    estimated_minutes: Optional[int] = None,
-    tags: Optional[str] = None,
-    folder_name: Optional[str] = None,
-    sequential: Optional[bool] = None,
+    due_date: str | None = None,
+    defer_date: str | None = None,
+    flagged: bool | None = None,
+    estimated_minutes: int | None = None,
+    tags: str | None = None,
+    folder_name: str | None = None,
+    sequential: bool | None = None,
 ) -> None:
     """Add a new project to OmniFocus.
 
@@ -210,17 +215,19 @@ def add_project_cmd(
         sequential: Whether tasks should be sequential (default: parallel)
     """
     tags_list = _parse_json_arg(tags, "tags") if tags else None
-    result = asyncio.run(add_project(
-        name=name,
-        note=note,
-        due_date=due_date,
-        defer_date=defer_date,
-        flagged=flagged,
-        estimated_minutes=estimated_minutes,
-        tags=tags_list,
-        folder_name=folder_name,
-        sequential=sequential,
-    ))
+    result = asyncio.run(
+        add_project(
+            name=name,
+            note=note,
+            due_date=due_date,
+            defer_date=defer_date,
+            flagged=flagged,
+            estimated_minutes=estimated_minutes,
+            tags=tags_list,
+            folder_name=folder_name,
+            sequential=sequential,
+        )
+    )
     _print_result(result)
 
 
@@ -243,10 +250,12 @@ def batch_add(
         create_sequentially: Process items in order for parent-child relationships
     """
     items_list = _parse_json_arg(items, "items")
-    result = asyncio.run(batch_add_items(
-        items=items_list,
-        create_sequentially=create_sequentially,
-    ))
+    result = asyncio.run(
+        batch_add_items(
+            items=items_list,
+            create_sequentially=create_sequentially,
+        )
+    )
     _print_result(result)
 
 
@@ -270,10 +279,10 @@ def batch_remove(items: str) -> None:
 def query(
     entity: str,
     *,
-    filters: Optional[str] = None,
-    fields: Optional[str] = None,
-    limit: Optional[int] = None,
-    sort_by: Optional[str] = None,
+    filters: str | None = None,
+    fields: str | None = None,
+    limit: int | None = None,
+    sort_by: str | None = None,
     sort_order: str = "asc",
     include_completed: bool = False,
     summary: bool = False,
@@ -303,16 +312,18 @@ def query(
     filters_dict = _parse_json_arg(filters, "filters") if filters else None
     fields_list = _parse_json_arg(fields, "fields") if fields else None
 
-    result = asyncio.run(query_omnifocus(
-        entity=entity,
-        filters=filters_dict,
-        fields=fields_list,
-        limit=limit,
-        sort_by=sort_by,
-        sort_order=sort_order,
-        include_completed=include_completed,
-        summary=summary,
-    ))
+    result = asyncio.run(
+        query_omnifocus(
+            entity=entity,
+            filters=filters_dict,
+            fields=fields_list,
+            limit=limit,
+            sort_by=sort_by,
+            sort_order=sort_order,
+            include_completed=include_completed,
+            summary=summary,
+        )
+    )
     _print_result(result)
 
 
@@ -329,10 +340,12 @@ def list_perspectives_cmd(
         include_built_in: Include built-in perspectives (Inbox, Projects, etc.)
         include_custom: Include custom perspectives (Pro feature)
     """
-    result = asyncio.run(list_perspectives(
-        include_built_in=include_built_in,
-        include_custom=include_custom,
-    ))
+    result = asyncio.run(
+        list_perspectives(
+            include_built_in=include_built_in,
+            include_custom=include_custom,
+        )
+    )
     _print_result(result)
 
 
@@ -342,7 +355,7 @@ def get_perspective(
     *,
     limit: int = 100,
     include_metadata: bool = True,
-    fields: Optional[str] = None,
+    fields: str | None = None,
 ) -> None:
     """Get items visible in a specific perspective.
 
@@ -354,12 +367,14 @@ def get_perspective(
     """
     fields_list = _parse_json_arg(fields, "fields") if fields else None
 
-    result = asyncio.run(get_perspective_view(
-        perspective_name=perspective_name,
-        limit=limit,
-        include_metadata=include_metadata,
-        fields=fields_list,
-    ))
+    result = asyncio.run(
+        get_perspective_view(
+            perspective_name=perspective_name,
+            limit=limit,
+            include_metadata=include_metadata,
+            fields=fields_list,
+        )
+    )
     _print_result(result)
 
 

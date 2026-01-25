@@ -1,35 +1,35 @@
 """Edit item tool for OmniFocus."""
 
 import asyncio
-from typing import Optional
-from ...utils import escape_applescript_string
+
 from ...dates import create_date_assignment
 from ...tags import (
     generate_add_tags_applescript,
     generate_remove_tags_applescript,
     generate_replace_tags_applescript,
 )
+from ...utils import escape_applescript_string
 
 
 async def edit_item(
     current_name: str = "",
-    id: Optional[str] = None,
+    id: str | None = None,
     new_name: str = "",
     new_note: str = "",
     mark_complete: bool = False,
     item_type: str = "task",
-    new_due_date: Optional[str] = None,
-    new_defer_date: Optional[str] = None,
-    new_planned_date: Optional[str] = None,
-    new_flagged: Optional[bool] = None,
-    new_estimated_minutes: Optional[int] = None,
-    new_status: Optional[str] = None,
-    add_tags: Optional[list[str]] = None,
-    remove_tags: Optional[list[str]] = None,
-    replace_tags: Optional[list[str]] = None,
-    new_sequential: Optional[bool] = None,
-    new_folder_name: Optional[str] = None,
-    new_project_status: Optional[str] = None,
+    new_due_date: str | None = None,
+    new_defer_date: str | None = None,
+    new_planned_date: str | None = None,
+    new_flagged: bool | None = None,
+    new_estimated_minutes: int | None = None,
+    new_status: str | None = None,
+    add_tags: list[str] | None = None,
+    remove_tags: list[str] | None = None,
+    replace_tags: list[str] | None = None,
+    new_sequential: bool | None = None,
+    new_folder_name: str | None = None,
+    new_project_status: str | None = None,
 ) -> str:
     """
     Edit a task or project in OmniFocus.
@@ -174,7 +174,9 @@ async def edit_item(
         # Handle project-specific properties
         if item_type == "project":
             if new_sequential is not None:
-                modifications.append(f"set sequential of {item_var} to {str(new_sequential).lower()}")
+                modifications.append(
+                    f"set sequential of {item_var} to {str(new_sequential).lower()}"
+                )
                 changes.append("sequential")
 
             if new_project_status is not None:
@@ -243,9 +245,11 @@ return "{result_msg}"
 '''
 
         proc = await asyncio.create_subprocess_exec(
-            'osascript', '-e', script,
+            "osascript",
+            "-e",
+            script,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+            stderr=asyncio.subprocess.PIPE,
         )
         stdout, stderr = await proc.communicate()
 

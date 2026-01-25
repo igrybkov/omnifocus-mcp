@@ -1,21 +1,22 @@
 """OmniFocus MCP Server - Main server implementation."""
 
-import sys
 import argparse
+
 from mcp.server.fastmcp import FastMCP
+
+from .mcp_tools.batch.batch_add import batch_add_items
+from .mcp_tools.batch.batch_remove import batch_remove_items
+from .mcp_tools.debug.dump_database import dump_database
+from .mcp_tools.perspectives.get_perspective_view import get_perspective_view
+from .mcp_tools.perspectives.list_perspectives import list_perspectives
+from .mcp_tools.projects.add_project import add_project
+from .mcp_tools.projects.tree import get_tree
+from .mcp_tools.query.query import query_omnifocus
 
 # Import tools from mcp_tools package
 from .mcp_tools.tasks.add_task import add_omnifocus_task
 from .mcp_tools.tasks.edit_item import edit_item
 from .mcp_tools.tasks.remove_item import remove_item
-from .mcp_tools.projects.add_project import add_project
-from .mcp_tools.projects.tree import get_tree
-from .mcp_tools.debug.dump_database import dump_database
-from .mcp_tools.batch.batch_add import batch_add_items
-from .mcp_tools.batch.batch_remove import batch_remove_items
-from .mcp_tools.query.query import query_omnifocus
-from .mcp_tools.perspectives.list_perspectives import list_perspectives
-from .mcp_tools.perspectives.get_perspective_view import get_perspective_view
 
 # Create MCP server instance
 mcp = FastMCP("OmniFocus MCP Server")
@@ -60,7 +61,7 @@ def main():
     parser.add_argument(
         "--expanded",
         action="store_true",
-        help="Enable expanded mode with additional debug tools (including dump_database)"
+        help="Enable expanded mode with additional debug tools (including dump_database)",
     )
 
     args = parser.parse_args()

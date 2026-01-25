@@ -1,8 +1,9 @@
 """Test CLI module."""
 
 import json
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import AsyncMock, patch
 
 from omnifocus_mcp.cli import (
     _parse_json_arg,
@@ -146,8 +147,8 @@ class TestCallCommand:
 
     def test_call_unknown_tool_exits(self, capsys):
         """Test calling an unknown tool exits with error."""
+
         from omnifocus_mcp.cli import call_tool
-        import sys
 
         with pytest.raises(SystemExit) as exc_info:
             call_tool("nonexistent_tool", "{}")
@@ -158,8 +159,8 @@ class TestCallCommand:
 
     def test_call_with_invalid_json_exits(self, capsys):
         """Test calling with invalid JSON exits with error."""
+
         from omnifocus_mcp.cli import call_tool
-        import sys
 
         with pytest.raises(SystemExit) as exc_info:
             call_tool("query_omnifocus", "not json")

@@ -1,22 +1,22 @@
 """Add project tool for OmniFocus."""
 
 import asyncio
-from typing import Optional
-from ...utils import escape_applescript_string
+
 from ...dates import create_date_assignment
 from ...tags import generate_add_tags_applescript
+from ...utils import escape_applescript_string
 
 
 async def add_project(
     name: str,
     note: str = "",
-    due_date: Optional[str] = None,
-    defer_date: Optional[str] = None,
-    flagged: Optional[bool] = None,
-    estimated_minutes: Optional[int] = None,
-    tags: Optional[list[str]] = None,
-    folder_name: Optional[str] = None,
-    sequential: Optional[bool] = None,
+    due_date: str | None = None,
+    defer_date: str | None = None,
+    flagged: bool | None = None,
+    estimated_minutes: int | None = None,
+    tags: list[str] | None = None,
+    folder_name: str | None = None,
+    sequential: bool | None = None,
 ) -> str:
     """
     Add a new project to OmniFocus.
@@ -107,7 +107,7 @@ end tell
 return "Project created successfully in folder: {escaped_folder}"
 '''
         else:
-            script = f'''
+            script = f"""
 {date_pre_script}
 tell application "OmniFocus"
     tell default document
@@ -116,12 +116,14 @@ tell application "OmniFocus"
     end tell
 end tell
 return "Project created successfully: {escaped_name}"
-'''
+"""
 
         proc = await asyncio.create_subprocess_exec(
-            'osascript', '-e', script,
+            "osascript",
+            "-e",
+            script,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+            stderr=asyncio.subprocess.PIPE,
         )
         stdout, stderr = await proc.communicate()
 
