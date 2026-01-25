@@ -26,6 +26,7 @@ class TestMcpFactory:
             "edit_item",
             "remove_item",
             "add_project",
+            "add_folder",
             "browse",
             "batch_add_items",
             "batch_remove_items",

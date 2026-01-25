@@ -7,6 +7,7 @@ from mcp.server.fastmcp import FastMCP
 from .mcp_tools.batch.batch_add import batch_add_items
 from .mcp_tools.batch.batch_remove import batch_remove_items
 from .mcp_tools.debug.dump_database import dump_database
+from .mcp_tools.folders.add_folder import add_folder
 from .mcp_tools.perspectives.get_perspective_view import get_perspective_view
 from .mcp_tools.perspectives.list_perspectives import list_perspectives
 from .mcp_tools.projects.add_project import add_project
@@ -27,6 +28,7 @@ _TOOLS = [
     edit_item,
     remove_item,
     add_project,
+    add_folder,
     browse,
     batch_add_items,
     batch_remove_items,
