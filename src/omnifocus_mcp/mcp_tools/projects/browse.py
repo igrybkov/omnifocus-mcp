@@ -49,6 +49,10 @@ async def browse(
                 Supports natural language like due_within
             - deferred_on: Projects where defer date equals specific date.
                 Supports natural language like due_within
+            - modified_before: Projects NOT modified in the last N days.
+                Supports natural language like due_within
+            - was_deferred: Filter to Active projects that had a defer date in the past
+                (have become available after being deferred) (boolean)
             - has_note: Filter by note presence (boolean)
             - available: Filter to Active projects that are not deferred (boolean)
         task_filters: Optional filters for tasks when include_tasks=True (all AND logic):
@@ -58,6 +62,7 @@ async def browse(
             - due_within: Tasks due within N days from today. Supports natural language
             - deferred_on: Tasks where defer date equals specific date. Supports natural language
             - planned_within: Tasks planned within N days from today. Supports natural language
+            - modified_before: Tasks NOT modified in the last N days. Supports natural language
         include_completed: Include completed/dropped projects and tasks (default: False)
         max_depth: Maximum folder depth to traverse (None = unlimited)
         include_root_projects: Include projects at root level (not in any folder) (default: True)

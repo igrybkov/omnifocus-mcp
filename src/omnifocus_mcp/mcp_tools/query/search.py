@@ -47,6 +47,10 @@ async def search(
                 Supports natural language like due_within
             - completed_within: Tasks completed within the last N days. Automatically
                 enables include_completed. Supports natural language like due_within
+            - modified_before: Items NOT modified in the last N days. Useful for
+                finding stale items. Supports natural language like due_within
+            - was_deferred: For projects, filter to Active projects that had a defer
+                date in the past (have become available after being deferred)
             - has_note: Filter by note presence
             - available: For projects, filter to Active + not deferred
         fields: Specific fields to return (reduces response size). Task fields include:

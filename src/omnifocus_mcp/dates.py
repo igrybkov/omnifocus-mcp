@@ -42,13 +42,14 @@ def parse_natural_date(value: str) -> datetime | None:
     )
 
 
-# Filters that expect N days from now (or days ago for completed_within)
+# Filters that expect N days from now (or days ago for completed_within/modified_before)
 _DAYS_FILTERS = (
     "due_within",
     "deferred_until",
     "planned_within",
     "deferred_on",
     "completed_within",
+    "modified_before",
 )
 
 
@@ -81,9 +82,9 @@ def preprocess_date_filters(filters: dict[str, Any]) -> dict[str, Any]:
                 # Convert to days from today (can be negative for past dates)
                 days = (parsed.date() - date.today()).days
 
-                # For completed_within, we want positive days in the past
+                # For completed_within and modified_before, we want positive days in the past
                 # e.g., "last week" parses to 7 days ago (-7), but we want 7
-                if key == "completed_within":
+                if key in ("completed_within", "modified_before"):
                     days = abs(days) if days < 0 else days
 
                 result[key] = days

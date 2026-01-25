@@ -159,6 +159,16 @@ function createTaskFilter(filters, options) {
             }
         }
 
+        // Filter by modified_before N days (tasks NOT modified in last N days)
+        if (filters.modified_before !== undefined) {
+            var modCutoff = new Date();
+            modCutoff.setDate(modCutoff.getDate() - filters.modified_before);
+            // If no modification date or modified after cutoff, exclude
+            if (!task.modificationDate || task.modificationDate > modCutoff) {
+                return false;
+            }
+        }
+
         return true;
     };
 }
@@ -255,6 +265,32 @@ function createProjectFilter(filters, options) {
         if (filters.has_note !== undefined) {
             var hasNote = project.note && project.note.trim() !== "";
             if (filters.has_note !== hasNote) {
+                return false;
+            }
+        }
+
+        // Filter by modified_before N days (projects NOT modified in last N days)
+        if (filters.modified_before !== undefined) {
+            var modCutoff = new Date();
+            modCutoff.setDate(modCutoff.getDate() - filters.modified_before);
+            // If no modification date or modified after cutoff, exclude
+            if (!project.modificationDate || project.modificationDate > modCutoff) {
+                return false;
+            }
+        }
+
+        // Filter by was_deferred (projects with defer date in the past, now available)
+        if (filters.was_deferred === true) {
+            // Must have a defer date
+            if (!project.deferDate) {
+                return false;
+            }
+            // Defer date must be in the past (project has become available)
+            if (project.deferDate >= new Date()) {
+                return false;
+            }
+            // Must be active status
+            if (project.status !== Project.Status.Active) {
                 return false;
             }
         }
