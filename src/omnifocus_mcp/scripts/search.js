@@ -24,9 +24,9 @@ try {
     // Determine default fields based on entity type
     function getDefaultFields() {
         if (entityType === "tasks") {
-            return ["id", "name", "taskStatus", "flagged", "dueDate", "deferDate", "projectName", "tagNames"];
+            return ["id", "name", "note", "taskStatus", "flagged", "dueDate", "deferDate", "projectName", "tagNames"];
         } else if (entityType === "projects") {
-            return ["id", "name", "status", "sequential", "dueDate", "deferDate", "folderName", "taskCount"];
+            return ["id", "name", "note", "status", "sequential", "dueDate", "deferDate", "folderName", "taskCount"];
         } else {
             return ["id", "name", "projectCount"];
         }

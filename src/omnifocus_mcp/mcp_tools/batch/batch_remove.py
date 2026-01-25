@@ -20,7 +20,24 @@ async def batch_remove_items(
             - item_type: Type of item: 'task' or 'project' (required)
 
     Returns:
-        JSON string with results summary and per-item details
+        JSON string with results in the following format:
+        {
+            "total": <number of items attempted>,
+            "success": <number of items removed successfully>,
+            "failed": <number of items that failed>,
+            "results": [
+                {
+                    "index": <0-based position in input array>,
+                    "type": "task" | "project",
+                    "id": <item id if provided>,
+                    "name": <item name>,
+                    "success": true | false,
+                    "message": <success message if success=true>,
+                    "error": <error message if success=false>
+                },
+                ...
+            ]
+        }
     """
     results = []
 

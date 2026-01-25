@@ -43,7 +43,23 @@ async def batch_add_items(
             parents are created before children (default: True)
 
     Returns:
-        JSON string with results summary and per-item details
+        JSON string with results in the following format:
+        {
+            "total": <number of items attempted>,
+            "success": <number of items created successfully>,
+            "failed": <number of items that failed>,
+            "results": [
+                {
+                    "index": <0-based position in input array>,
+                    "type": "task" | "project",
+                    "name": <item name>,
+                    "success": true | false,
+                    "message": <success message if success=true>,
+                    "error": <error message if success=false>
+                },
+                ...
+            ]
+        }
     """
     results = []
     temp_id_to_real_id: dict[str, str] = {}

@@ -7,11 +7,13 @@ from mcp.server.fastmcp import FastMCP
 from .mcp_tools.batch.batch_add import batch_add_items
 from .mcp_tools.batch.batch_remove import batch_remove_items
 from .mcp_tools.debug.dump_database import dump_database
+from .mcp_tools.folders.add_folder import add_folder
 from .mcp_tools.perspectives.get_perspective_view import get_perspective_view
 from .mcp_tools.perspectives.list_perspectives import list_perspectives
 from .mcp_tools.projects.add_project import add_project
 from .mcp_tools.projects.browse import browse
 from .mcp_tools.query.search import search
+from .mcp_tools.tags.list_tags import list_tags
 from .mcp_tools.tasks.add_task import add_omnifocus_task
 from .mcp_tools.tasks.edit_item import edit_item
 from .mcp_tools.tasks.remove_item import remove_item
@@ -27,12 +29,14 @@ _TOOLS = [
     edit_item,
     remove_item,
     add_project,
+    add_folder,
     browse,
     batch_add_items,
     batch_remove_items,
     search,
     list_perspectives,
     get_perspective_view,
+    list_tags,
     dump_database,
 ]
 
