@@ -96,7 +96,7 @@ The server uses two complementary scripting approaches:
 | File | Purpose |
 |------|---------|
 | `src/omnifocus_mcp/utils.py` | AppleScript string escaping |
-| `src/omnifocus_mcp/dates.py` | ISO date parsing and AppleScript date generation |
+| `src/omnifocus_mcp/dates.py` | Date parsing (ISO + natural language) and AppleScript date generation |
 | `src/omnifocus_mcp/tags.py` | Tag add/remove/replace AppleScript generation |
 | `src/omnifocus_mcp/omnijs.py` | OmniJS execution via JXA wrapper |
 | `src/omnifocus_mcp/applescript_builder.py` | High-level AppleScript builders (dates, find clause, tags) |
@@ -187,6 +187,7 @@ with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as moc
   - `include_folders`/`include_projects`/`include_tasks` - Control what to include
   - `filters` - Project filters: status, flagged, sequential, tags, due_within, deferred_until, has_note, available
   - `task_filters` - Task filters (when include_tasks=True): flagged, tags, status, due_within, planned_within
+  - Date filters support natural language: "tomorrow", "next week", "in 3 days", etc.
 
 ### Batch Tools
 - `batch_add_items` - Bulk create tasks/projects with hierarchy support (tempId/parentTempId)
@@ -194,6 +195,7 @@ with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as moc
 
 ### Query Tools
 - `search` - Powerful filtered queries (by project, tags, status, dates, planned_within, folderPath)
+  - Date filters support natural language: "tomorrow", "next week", "in 3 days", etc.
 
 ### Perspective Tools
 - `list_perspectives` - List built-in and custom perspectives
@@ -205,6 +207,32 @@ with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as moc
 ## Security: AppleScript Injection Prevention
 
 All user input must pass through `utils.escape_applescript_string()` before being embedded in AppleScript. The function escapes backslashes first, then double quotes.
+
+## Natural Language Date Support
+
+Date filters (`due_within`, `deferred_until`, `planned_within`) in `search` and `browse` tools accept natural language:
+
+```python
+# All equivalent ways to search for tasks due within 3 days
+search('tasks', filters={'due_within': 3})
+search('tasks', filters={'due_within': 'in 3 days'})
+search('tasks', filters={'due_within': '2024-01-28'})  # ISO date
+
+# Natural language examples
+search('tasks', filters={'due_within': 'tomorrow'})
+search('tasks', filters={'due_within': 'next week'})
+search('tasks', filters={'planned_within': 'this friday'})
+browse(filters={'deferred_until': 'next monday'})
+```
+
+Supported formats:
+- Relative: "today", "tomorrow", "yesterday"
+- Periods: "this week", "next week", "last week"
+- Days: "next monday", "last friday"
+- Offsets: "in 3 days", "2 weeks ago"
+- ISO: "2024-01-25", "2024-01-25T14:30:00"
+
+Uses the `dateparser` library with `PREFER_DATES_FROM: future` for ambiguous dates.
 
 ## Design Decisions
 

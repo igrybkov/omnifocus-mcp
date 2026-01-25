@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from ...dates import preprocess_date_filters
 from ..response import omnijs_json_response
 
 # Shared JS modules for browse script
@@ -42,16 +43,18 @@ async def browse(
             - flagged: Filter by flagged status (boolean)
             - sequential: Filter by sequential setting (boolean)
             - tags: Filter by tag names (list, OR logic - project has ANY of the tags)
-            - due_within: Projects due within N days from today
-            - deferred_until: Projects deferred becoming available within N days
+            - due_within: Projects due within N days from today. Supports natural language:
+                "next 3 days", "this week", "tomorrow", or numeric days
+            - deferred_until: Projects deferred becoming available within N days.
+                Supports natural language like due_within
             - has_note: Filter by note presence (boolean)
             - available: Filter to Active projects that are not deferred (boolean)
         task_filters: Optional filters for tasks when include_tasks=True (all AND logic):
             - flagged: Filter by flagged status (boolean)
             - tags: Filter by tag names (list, OR logic)
             - status: Filter by task status (list, OR logic)
-            - due_within: Tasks due within N days from today
-            - planned_within: Tasks planned within N days from today
+            - due_within: Tasks due within N days from today. Supports natural language
+            - planned_within: Tasks planned within N days from today. Supports natural language
         include_completed: Include completed/dropped projects and tasks (default: False)
         max_depth: Maximum folder depth to traverse (None = unlimited)
         include_root_projects: Include projects at root level (not in any folder) (default: True)
@@ -87,13 +90,17 @@ async def browse(
             "taskCount": 42
         }
     """
+    # Preprocess date filters to convert natural language to numeric days
+    processed_filters = preprocess_date_filters(filters or {})
+    processed_task_filters = preprocess_date_filters(task_filters or {})
+
     return await omnijs_json_response(
         "browse",
         {
             "parent_id": parent_id,
             "parent_name": parent_name,
-            "filters": filters or {},
-            "task_filters": task_filters or {},
+            "filters": processed_filters,
+            "task_filters": processed_task_filters,
             "include_completed": include_completed,
             "max_depth": max_depth,
             "include_root_projects": include_root_projects,

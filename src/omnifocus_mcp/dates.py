@@ -1,6 +1,81 @@
 """Date utilities for OmniFocus AppleScript generation."""
 
-from datetime import datetime
+from datetime import date, datetime
+from typing import Any
+
+import dateparser
+
+
+def parse_natural_date(value: str) -> datetime | None:
+    """
+    Parse natural language date string to datetime.
+
+    Supports:
+    - "today", "tomorrow", "yesterday"
+    - "this week", "last week", "next week"
+    - "next monday", "last friday"
+    - "in 3 days", "2 weeks ago"
+    - ISO format: "2024-01-25"
+
+    Args:
+        value: Natural language date string or ISO format
+
+    Returns:
+        Parsed datetime, or None if unparseable
+    """
+    if not value or not isinstance(value, str):
+        return None
+
+    # Try ISO first (fast path)
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        pass
+
+    # Use dateparser for natural language
+    return dateparser.parse(
+        value,
+        settings={
+            "PREFER_DATES_FROM": "future",
+            "RELATIVE_BASE": datetime.now(),
+        },
+    )
+
+
+# Filters that expect N days from now
+_DAYS_FILTERS = ("due_within", "deferred_until", "planned_within")
+
+
+def preprocess_date_filters(filters: dict[str, Any]) -> dict[str, Any]:
+    """
+    Convert natural language dates to numeric days format.
+
+    Processes filters like due_within, deferred_until, planned_within:
+    - If string, parses natural language and converts to days from today
+    - If already numeric, passes through unchanged
+
+    Args:
+        filters: Original filter dict
+
+    Returns:
+        New filter dict with date filters converted to numeric days
+    """
+    if not filters:
+        return filters
+
+    result = filters.copy()
+
+    for key in _DAYS_FILTERS:
+        if key in result and isinstance(result[key], str):
+            parsed = parse_natural_date(result[key])
+            if parsed:
+                # Convert to days from today (can be negative for past dates)
+                result[key] = (parsed.date() - date.today()).days
+            else:
+                # Unparseable - remove to avoid passing invalid value
+                del result[key]
+
+    return result
 
 
 def parse_iso_date(iso_string: str) -> tuple[int, int, int, int, int, int]:
