@@ -174,37 +174,73 @@ async def get_perspective_view(
                     }}
                 }});
             }} else {{
-                // Try to find a custom perspective with this name
+                // Custom perspective - use content tree API
                 try {{
-                    const customPerspectives = Perspective.Custom.all;
-                    let found = false;
+                    const customPersp = Perspective.Custom.all.find(
+                        p => p.name.toLowerCase() === normalizedName
+                    );
 
-                    for (const perspective of customPerspectives) {{
-                        if (perspective.name.toLowerCase() === normalizedName) {{
-                            found = true;
-                            // Note: OmniJS doesn't provide direct access to perspective contents
-                            // We would need to switch to the perspective, which requires UI
-                            // Instead, return a message about this limitation
-                            break;
-                        }}
-                    }}
-
-                    if (found) {{
-                        return JSON.stringify({{
-                            perspectiveName: perspectiveName,
-                            type: "custom",
-                            note: "Custom perspective found but content cannot be accessed programmatically. " +
-                                  "OmniJS cannot switch perspectives without UI interaction.",
-                            items: []
-                        }});
-                    }} else {{
+                    if (!customPersp) {{
                         return JSON.stringify({{
                             error: "Perspective not found: " + perspectiveName
                         }});
                     }}
+
+                    // Check for open window (required for content tree access)
+                    if (!document.windows.length) {{
+                        return JSON.stringify({{
+                            error: "No OmniFocus window is open. Custom perspectives require an open window."
+                        }});
+                    }}
+
+                    const win = document.windows[0];
+                    const originalPerspective = win.perspective;
+
+                    // Helper for project status
+                    const projectStatusMap = {{}};
+                    projectStatusMap[Project.Status.Active] = "Active";
+                    projectStatusMap[Project.Status.Done] = "Completed";
+                    projectStatusMap[Project.Status.Dropped] = "Dropped";
+                    projectStatusMap[Project.Status.OnHold] = "OnHold";
+
+                    function getProjectStatus(status) {{
+                        return projectStatusMap[status] || "Unknown";
+                    }}
+
+                    // Switch to custom perspective
+                    win.perspective = customPersp;
+
+                    // Traverse content tree
+                    const content = win.content;
+                    if (content && content.rootNode) {{
+                        content.rootNode.apply(node => {{
+                            if (items.length >= limit) return;
+                            if (node.object instanceof Task) {{
+                                items.push(getTaskDetails(node.object));
+                            }} else if (node.object instanceof Project) {{
+                                items.push({{
+                                    id: node.object.id.primaryKey,
+                                    name: node.object.name,
+                                    type: "project",
+                                    status: getProjectStatus(node.object.status)
+                                }});
+                            }}
+                        }});
+                    }}
+
+                    // Restore original perspective
+                    win.perspective = originalPerspective;
+
+                    return JSON.stringify({{
+                        perspectiveName: perspectiveName,
+                        type: "custom",
+                        count: items.length,
+                        items: items
+                    }});
+
                 }} catch (e) {{
                     return JSON.stringify({{
-                        error: "Error accessing custom perspectives: " + e.toString()
+                        error: "Error accessing custom perspective: " + e.toString()
                     }});
                 }}
             }}
