@@ -1,0 +1,59 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    ":automergeMinor",
+    "schedule:weekends"
+  ],
+  "labels": ["dependencies"],
+  "rangeStrategy": "pin",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true
+  },
+  "packageRules": [
+    {
+      "description": "Group all non-major Python dependencies",
+      "matchManagers": ["pep621", "pip_requirements", "pip-compile"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "python dependencies (non-major)",
+      "automerge": true
+    },
+    {
+      "description": "Group all major Python dependencies",
+      "matchManagers": ["pep621", "pip_requirements", "pip-compile"],
+      "matchUpdateTypes": ["major"],
+      "groupName": "python dependencies (major)",
+      "automerge": false
+    },
+    {
+      "description": "Group dev dependencies",
+      "matchDepTypes": ["dev"],
+      "groupName": "dev dependencies",
+      "automerge": true
+    },
+    {
+      "description": "Group GitHub Actions",
+      "matchManagers": ["github-actions"],
+      "groupName": "github actions",
+      "automerge": true
+    },
+    {
+      "description": "Group pre-commit hooks",
+      "matchManagers": ["pre-commit"],
+      "groupName": "pre-commit hooks",
+      "automerge": true
+    },
+    {
+      "description": "Automerge test dependencies",
+      "matchPackageNames": ["pytest", "pytest-asyncio", "pytest-watch"],
+      "automerge": true
+    },
+    {
+      "description": "Automerge linting tools",
+      "matchPackageNames": ["ruff", "pre-commit"],
+      "automerge": true
+    }
+  ]
+}
