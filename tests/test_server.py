@@ -26,10 +26,10 @@ class TestMcpFactory:
             "edit_item",
             "remove_item",
             "add_project",
-            "get_tree",
+            "browse",
             "batch_add_items",
             "batch_remove_items",
-            "query_omnifocus",
+            "search",
             "list_perspectives",
             "get_perspective_view",
         ]
@@ -51,9 +51,9 @@ class TestMcpFactory:
 
     def test_mcp_can_disable_any_tool(self, monkeypatch):
         """Test that any tool can be disabled via env var."""
-        monkeypatch.setenv("TOOL_QUERY_OMNIFOCUS", "false")
+        monkeypatch.setenv("TOOL_SEARCH", "false")
         server = mcp()
-        assert "query_omnifocus" not in server._tool_manager._tools
+        assert "search" not in server._tool_manager._tools
 
 
 class TestIsToolEnabled:
@@ -92,4 +92,4 @@ class TestToolDefaults:
     def test_other_tools_not_in_defaults(self):
         """Test that other tools are not in TOOL_DEFAULTS (meaning enabled by default)."""
         assert "add_omnifocus_task" not in TOOL_DEFAULTS
-        assert "query_omnifocus" not in TOOL_DEFAULTS
+        assert "search" not in TOOL_DEFAULTS

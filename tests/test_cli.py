@@ -124,10 +124,10 @@ class TestCLICommands:
             "edit-item",
             "remove-item",
             "add-project",
-            "get-tree",
+            "browse",
             "batch-add-items",
             "batch-remove-items",
-            "query-omnifocus",
+            "search",
             "list-perspectives",
             "get-perspective-view",
             "call",
@@ -146,9 +146,9 @@ class TestCLICommands:
 
         assert "Available MCP tools:" in captured.out
         assert "add_omnifocus_task" in captured.out
-        assert "query_omnifocus" in captured.out
+        assert "search" in captured.out
         assert "list_perspectives" in captured.out
-        assert "get_tree" in captured.out
+        assert "browse" in captured.out
 
 
 class TestCallCommand:
@@ -187,7 +187,7 @@ class TestCallCommand:
         from omnifocus_mcp.cli import call_tool
 
         with pytest.raises(SystemExit) as exc_info:
-            call_tool("query_omnifocus", "not json")
+            call_tool("search", "not json")
 
         assert exc_info.value.code == 1
         captured = capsys.readouterr()
