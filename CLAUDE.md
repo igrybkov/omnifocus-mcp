@@ -25,6 +25,43 @@ pytest tests/test_tasks.py # Run single test file
 pytest -k "test_add"       # Run tests matching pattern
 ```
 
+### Running Tools During Development
+
+Three options for testing MCP tools interactively:
+
+**Option A: MCP Inspector UI**
+```bash
+# Requires: pip install fastmcp (separate from mcp package)
+fastmcp dev src/omnifocus_mcp/server.py
+```
+Launches web UI for interactively testing all tools.
+
+**Option B: Direct Python Import (zero setup)**
+```bash
+python -c "
+import asyncio
+from omnifocus_mcp.mcp_tools.query.query import query_omnifocus
+print(asyncio.run(query_omnifocus('tasks', filters={'flagged': True})))
+"
+```
+Tools are just async functions - call them directly.
+
+**Option C: CLI Commands**
+```bash
+# List all available tools
+uv run omnifocus-cli list-tools
+
+# Named subcommands with flags
+uv run omnifocus-cli add-task --name "Buy groceries" --project "Shopping" --flagged
+uv run omnifocus-cli query --entity tasks --filters '{"flagged": true}'
+uv run omnifocus-cli list-perspectives
+uv run omnifocus-cli get-perspective "Flagged"
+
+# Generic call with JSON arguments
+uv run omnifocus-cli call add_omnifocus_task '{"name": "Buy groceries", "project": "Shopping"}'
+uv run omnifocus-cli call query_omnifocus '{"entity": "tasks", "filters": {"due_within": 3}}'
+```
+
 ## Architecture
 
 ### Tool Organization
