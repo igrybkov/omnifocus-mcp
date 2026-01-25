@@ -27,6 +27,28 @@ function isWithinDays(date, days, requirePastOrPresent) {
 }
 
 /**
+ * Check if a date falls on a specific day (N days from today).
+ * @param {Date|null} date - The date to check
+ * @param {number} daysFromToday - Number of days from today (0=today, 1=tomorrow, -1=yesterday)
+ * @returns {boolean} True if date falls on that specific day
+ */
+function isOnDay(date, daysFromToday) {
+    if (!date) {
+        return false;
+    }
+    var targetDate = new Date();
+    targetDate.setDate(targetDate.getDate() + daysFromToday);
+
+    // Get start of target day (midnight)
+    var startOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+    // Get end of target day (midnight next day)
+    var endOfDay = new Date(startOfDay);
+    endOfDay.setDate(endOfDay.getDate() + 1);
+
+    return date >= startOfDay && date < endOfDay;
+}
+
+/**
  * Create a filter function for tasks.
  * @param {Object} filters - Filter criteria
  * @param {Object} options - Additional options
@@ -99,6 +121,13 @@ function createTaskFilter(filters, options) {
         // Filter by deferred_until N days
         if (filters.deferred_until !== undefined) {
             if (!isWithinDays(task.deferDate, filters.deferred_until, false)) {
+                return false;
+            }
+        }
+
+        // Filter by deferred_on (exact date match)
+        if (filters.deferred_on !== undefined) {
+            if (!isOnDay(task.deferDate, filters.deferred_on)) {
                 return false;
             }
         }
@@ -199,6 +228,13 @@ function createProjectFilter(filters, options) {
         // Filter by deferred_until N days
         if (filters.deferred_until !== undefined) {
             if (!isWithinDays(project.deferDate, filters.deferred_until, false)) {
+                return false;
+            }
+        }
+
+        // Filter by deferred_on (exact date match)
+        if (filters.deferred_on !== undefined) {
+            if (!isOnDay(project.deferDate, filters.deferred_on)) {
                 return false;
             }
         }

@@ -109,7 +109,7 @@ Located in `src/omnifocus_mcp/scripts/common/`:
 | File | Purpose |
 |------|---------|
 | `status_maps.js` | Task/project status enums to strings (full and abbreviated) |
-| `filters.js` | Filter factory functions, `isWithinDays()` date helper |
+| `filters.js` | Filter factory functions, `isWithinDays()`, `isOnDay()` date helpers |
 | `field_mappers.js` | Field mapping for tasks/projects/folders, `getFolderPath()` |
 
 ### Patterns to Follow (IMPORTANT)
@@ -185,8 +185,8 @@ with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as moc
   - `summary=True` - Return only counts (projectCount, folderCount, taskCount)
   - `fields` - Select specific fields to reduce response size (includes `folderPath`)
   - `include_folders`/`include_projects`/`include_tasks` - Control what to include
-  - `filters` - Project filters: status, flagged, sequential, tags, due_within, deferred_until, has_note, available
-  - `task_filters` - Task filters (when include_tasks=True): flagged, tags, status, due_within, planned_within
+  - `filters` - Project filters: status, flagged, sequential, tags, due_within, deferred_until, deferred_on, has_note, available
+  - `task_filters` - Task filters (when include_tasks=True): flagged, tags, status, due_within, deferred_on, planned_within
   - Date filters support natural language: "tomorrow", "next week", "in 3 days", etc.
 
 ### Batch Tools
@@ -210,7 +210,7 @@ All user input must pass through `utils.escape_applescript_string()` before bein
 
 ## Natural Language Date Support
 
-Date filters (`due_within`, `deferred_until`, `planned_within`) in `search` and `browse` tools accept natural language:
+Date filters (`due_within`, `deferred_until`, `deferred_on`, `planned_within`) in `search` and `browse` tools accept natural language:
 
 ```python
 # All equivalent ways to search for tasks due within 3 days
@@ -222,6 +222,7 @@ search('tasks', filters={'due_within': '2024-01-28'})  # ISO date
 search('tasks', filters={'due_within': 'tomorrow'})
 search('tasks', filters={'due_within': 'next week'})
 search('tasks', filters={'planned_within': 'this friday'})
+search('tasks', filters={'deferred_on': 'today'})  # Tasks scheduled to start today
 browse(filters={'deferred_until': 'next monday'})
 ```
 

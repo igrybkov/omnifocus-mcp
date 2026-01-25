@@ -133,11 +133,28 @@ class TestPreprocessDateFilters:
             "due_within": "tomorrow",
             "deferred_until": "in 2 days",
             "planned_within": "in 5 days",
+            "deferred_on": "today",
         }
         result = preprocess_date_filters(filters)
         assert result["due_within"] == 1
         assert result["deferred_until"] == 2
         assert result["planned_within"] == 5
+        assert result["deferred_on"] == 0
+
+    def test_deferred_on_filter_today(self):
+        """Test deferred_on 'today' converts to 0 days."""
+        result = preprocess_date_filters({"deferred_on": "today"})
+        assert result["deferred_on"] == 0
+
+    def test_deferred_on_filter_tomorrow(self):
+        """Test deferred_on 'tomorrow' converts to 1 day."""
+        result = preprocess_date_filters({"deferred_on": "tomorrow"})
+        assert result["deferred_on"] == 1
+
+    def test_deferred_on_filter_yesterday(self):
+        """Test deferred_on 'yesterday' converts to -1 day."""
+        result = preprocess_date_filters({"deferred_on": "yesterday"})
+        assert result["deferred_on"] == -1
 
     def test_unparseable_filter_removed(self):
         """Test that unparseable string filters are removed."""

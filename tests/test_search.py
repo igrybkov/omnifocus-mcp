@@ -160,6 +160,29 @@ class TestSearch:
             assert params["filters"]["deferred_until"] == 3
 
     @pytest.mark.asyncio
+    async def test_search_with_deferred_on_filter(self):
+        """Test search with deferred_on filter for exact date match."""
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
+            mock_exec.return_value = {"count": 0, "entity": "tasks", "items": []}
+
+            await search(entity="tasks", filters={"deferred_on": 0})  # Today
+
+            script_name, params, *_ = mock_exec.call_args[0]
+            assert params["filters"]["deferred_on"] == 0
+
+    @pytest.mark.asyncio
+    async def test_search_with_deferred_on_natural_language(self):
+        """Test search with deferred_on filter using natural language."""
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
+            mock_exec.return_value = {"count": 0, "entity": "tasks", "items": []}
+
+            await search(entity="tasks", filters={"deferred_on": "tomorrow"})
+
+            script_name, params, *_ = mock_exec.call_args[0]
+            # "tomorrow" should be converted to 1 day from today
+            assert params["filters"]["deferred_on"] == 1
+
+    @pytest.mark.asyncio
     async def test_search_with_planned_within_filter(self):
         """Test search with planned_within filter."""
         with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:

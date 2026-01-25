@@ -244,6 +244,30 @@ class TestBrowse:
             assert params["filters"]["due_within"] == 7
 
     @pytest.mark.asyncio
+    async def test_browse_with_deferred_on_filter(self):
+        """Test project tree with deferred_on filter for exact date match."""
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
+            mock_exec.return_value = {"tree": [], "projectCount": 0, "folderCount": 0}
+
+            await browse(filters={"deferred_on": "today"})
+
+            script_name, params, *_ = mock_exec.call_args[0]
+            # "today" should be converted to 0 days from today
+            assert params["filters"]["deferred_on"] == 0
+
+    @pytest.mark.asyncio
+    async def test_browse_with_task_deferred_on_filter(self):
+        """Test browse with deferred_on filter in task_filters."""
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
+            mock_exec.return_value = {"tree": [], "projectCount": 0, "folderCount": 0}
+
+            await browse(include_tasks=True, task_filters={"deferred_on": "tomorrow"})
+
+            script_name, params, *_ = mock_exec.call_args[0]
+            # "tomorrow" should be converted to 1 day
+            assert params["task_filters"]["deferred_on"] == 1
+
+    @pytest.mark.asyncio
     async def test_browse_exclude_root_projects(self):
         """Test project tree with include_root_projects=False."""
         with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
