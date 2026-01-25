@@ -147,6 +147,18 @@ function createTaskFilter(filters, options) {
             }
         }
 
+        // Filter by completed_within N days (tasks completed in last N days)
+        if (filters.completed_within !== undefined) {
+            if (!task.completionDate) {
+                return false;
+            }
+            var cutoff = new Date();
+            cutoff.setDate(cutoff.getDate() - filters.completed_within);
+            if (task.completionDate < cutoff) {
+                return false;
+            }
+        }
+
         return true;
     };
 }

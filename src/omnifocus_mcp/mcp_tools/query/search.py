@@ -45,6 +45,8 @@ async def search(
                 finding "tasks scheduled to start today". Supports natural language
             - planned_within: Tasks planned within N days from today (OmniFocus 4.7+).
                 Supports natural language like due_within
+            - completed_within: Tasks completed within the last N days. Automatically
+                enables include_completed. Supports natural language like due_within
             - has_note: Filter by note presence
             - available: For projects, filter to Active + not deferred
         fields: Specific fields to return (reduces response size). Task fields include:
@@ -60,6 +62,10 @@ async def search(
     """
     # Preprocess date filters to convert natural language to numeric days
     processed_filters = preprocess_date_filters(filters or {})
+
+    # Auto-enable include_completed when completed_within is used
+    if "completed_within" in processed_filters:
+        include_completed = True
 
     return await omnijs_json_response(
         "search",
