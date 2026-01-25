@@ -28,7 +28,16 @@ async def get_perspective_view(
     Returns:
         JSON string with perspective content
     """
-    default_fields = ["id", "name", "flagged", "dueDate", "taskStatus", "projectName", "tagNames"]
+    default_fields = [
+        "id",
+        "name",
+        "note",
+        "flagged",
+        "dueDate",
+        "taskStatus",
+        "projectName",
+        "tagNames",
+    ]
     fields_to_use = fields if fields else default_fields
 
     try:
