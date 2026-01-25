@@ -12,8 +12,8 @@ This is a Python MCP (Model Context Protocol) server that enables AI assistants 
 
 ```bash
 uv sync                    # Install dependencies
-uv run omnifocus-mcp       # Run server (standard mode - 10 tools)
-uv run omnifocus-mcp --expanded  # Run with debug tools (11 tools, includes dump_database)
+uv run omnifocus-mcp       # Run server (standard mode - 13 tools)
+uv run omnifocus-mcp --expanded  # Run with debug tools (14 tools, includes dump_database)
 ```
 
 ### Testing
@@ -74,7 +74,7 @@ mcp_tools/
 ├── projects/        # add_project, browse
 ├── batch/           # batch_add_items, batch_remove_items
 ├── query/           # search
-├── perspectives/    # list_perspectives, get_perspective_view
+├── perspectives/    # list_perspectives, get_perspective_view, get_perspective_rules
 └── debug/           # dump_database (--expanded only)
 ```
 
@@ -89,7 +89,7 @@ The server uses two complementary scripting approaches:
 2. **OmniJS** (via JXA wrapper) - For queries and database inspection
    - Provides access to `flattenedTasks`, `flattenedProjects`, `flattenedFolders` globals
    - Required for `Perspective.BuiltIn.*` and `Perspective.Custom.all`
-   - Used by: `search`, `browse`, `list_perspectives`, `get_perspective_view`, `dump_database`
+   - Used by: `search`, `browse`, `list_perspectives`, `get_perspective_view`, `get_perspective_rules`, `dump_database`
 
 ### Core Utilities
 
@@ -168,8 +168,8 @@ with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as moc
 ### Tool Registration
 
 `server.py` uses FastMCP decorators to register tools:
-- **Standard mode**: 10 core tools
-- **Expanded mode** (`--expanded` flag): Adds dump_database debug tool (11 total)
+- **Standard mode**: 13 core tools
+- **Expanded mode** (`--expanded` flag): Adds dump_database debug tool (14 total)
 
 ## Tools Reference
 
@@ -200,6 +200,7 @@ with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as moc
 ### Perspective Tools
 - `list_perspectives` - List built-in and custom perspectives
 - `get_perspective_view` - View items in a specific perspective
+- `get_perspective_rules` - Get filter rules for a custom perspective (read-only, OmniFocus 4.2+)
 
 ### Debug Tools (--expanded only)
 - `dump_database` - Full database dump with formatting options
