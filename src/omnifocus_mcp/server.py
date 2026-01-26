@@ -14,6 +14,7 @@ from .mcp_tools.perspectives.list_perspectives import list_perspectives
 from .mcp_tools.projects.add_project import add_project
 from .mcp_tools.projects.browse import browse
 from .mcp_tools.query.search import search
+from .mcp_tools.reorder.reorder_tasks import reorder_tasks
 from .mcp_tools.tags.list_tags import list_tags
 from .mcp_tools.tasks.add_task import add_omnifocus_task
 from .mcp_tools.tasks.edit_item import edit_item
@@ -39,6 +40,7 @@ _TOOLS = [
     get_perspective_view,
     get_perspective_rules,
     list_tags,
+    reorder_tasks,
     dump_database,
 ]
 

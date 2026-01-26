@@ -8,6 +8,7 @@ from ...applescript_builder import (
     process_date_params,
 )
 from ...utils import escape_applescript_string
+from ..reorder.move_helper import move_task_to_position
 
 
 async def edit_item(
@@ -29,6 +30,8 @@ async def edit_item(
     new_sequential: bool | None = None,
     new_folder_name: str | None = None,
     new_project_status: str | None = None,
+    new_position: str | None = None,
+    position_reference_task_id: str | None = None,
 ) -> str:
     """
     Edit a task or project in OmniFocus.
@@ -53,6 +56,10 @@ async def edit_item(
         new_sequential: Whether the project should be sequential (projects only, optional)
         new_folder_name: New folder to move the project to (projects only, optional)
         new_project_status: New status for projects: 'active', 'completed', 'dropped', 'onHold' (optional)
+        new_position: New position within container - 'beginning', 'ending', 'before', 'after'
+            (tasks only, not supported for inbox tasks or projects)
+        position_reference_task_id: ID of reference task (required when new_position is
+            'before' or 'after')
 
     Returns:
         Success or error message
@@ -183,9 +190,23 @@ move {item_var} to end of projects of targetFolder''')
 
         # Build result message
         changes_str = ", ".join(changes) if changes else "no changes"
-        result_msg = f"{item_type.capitalize()} updated successfully. Changed: {changes_str}"
 
-        script = f'''
+        # For tasks with position change, we need the task ID
+        # Return both a success indicator and the ID
+        if item_type == "task" and new_position:
+            script = f"""
+{date_pre_script}
+tell application "OmniFocus"
+    tell default document
+        {find_clause}
+        {modifications_str}
+        return id of {item_var}
+    end tell
+end tell
+"""
+        else:
+            result_msg = f"{item_type.capitalize()} updated successfully. Changed: {changes_str}"
+            script = f'''
 {date_pre_script}
 tell application "OmniFocus"
     tell default document
@@ -208,6 +229,24 @@ return "{result_msg}"
         if proc.returncode != 0:
             return f"Error: {stderr.decode()}"
 
-        return stdout.decode().strip()
+        output = stdout.decode().strip()
+
+        # Handle position change for tasks
+        if item_type == "task" and new_position:
+            task_id = output  # The script returned the task ID
+            result_msg = f"Task updated successfully. Changed: {changes_str}"
+
+            success, move_msg = await move_task_to_position(
+                task_id, new_position, position_reference_task_id
+            )
+            if success:
+                result_msg += f" (repositioned to {new_position})"
+                changes.append("position")
+            else:
+                result_msg += f" (repositioning failed: {move_msg})"
+
+            return result_msg
+
+        return output
     except Exception as e:
         return f"Error editing {item_type}: {str(e)}"

@@ -5,6 +5,7 @@ import asyncio
 from ...applescript_builder import process_date_params
 from ...tags import generate_add_tags_applescript
 from ...utils import escape_applescript_string
+from ..reorder.move_helper import move_task_to_position
 
 
 async def add_omnifocus_task(
@@ -19,6 +20,8 @@ async def add_omnifocus_task(
     tags: list[str] | None = None,
     parent_task_id: str | None = None,
     parent_task_name: str | None = None,
+    position: str | None = None,
+    reference_task_id: str | None = None,
 ) -> str:
     """
     Add a new task to OmniFocus.
@@ -36,6 +39,9 @@ async def add_omnifocus_task(
         tags: Optional list of tags to assign to the task
         parent_task_id: Optional ID of the parent task (for creating subtasks)
         parent_task_name: Optional name of parent task (used if ID not provided)
+        position: Position within the container - 'beginning', 'ending', 'before', 'after'
+            (only works for tasks in projects, not inbox tasks)
+        reference_task_id: ID of reference task (required when position is 'before' or 'after')
 
     Returns:
         Success or error message
@@ -80,9 +86,14 @@ async def add_omnifocus_task(
 
         post_creation_str = "\n".join(post_creation)
 
-        # Determine where to add the task
+        # Determine where to add the task and build appropriate script
+        # All scripts now return the task ID for optional position handling
+        location_msg = ""
+        can_reposition = True  # Whether positioning is supported for this location
+
         if escaped_parent_id:
             # Add as subtask by parent ID
+            location_msg = "as subtask (by ID)"
             script = f'''
 {date_pre_script}
 tell application "OmniFocus"
@@ -92,14 +103,14 @@ tell application "OmniFocus"
             set newTask to make new task with properties {{{properties_str}}}
             {post_creation_str}
         end tell
+        return id of newTask
     end tell
 end tell
-return "Task added successfully as subtask (by ID)"
 '''
         elif escaped_parent_name:
             # Add as subtask by parent name
             if escaped_project:
-                # Search within project first
+                location_msg = f"as subtask in project: {escaped_project}"
                 script = f'''
 {date_pre_script}
 tell application "OmniFocus"
@@ -110,12 +121,12 @@ tell application "OmniFocus"
             set newTask to make new task with properties {{{properties_str}}}
             {post_creation_str}
         end tell
+        return id of newTask
     end tell
 end tell
-return "Task added successfully as subtask in project: {escaped_project}"
 '''
             else:
-                # Search globally
+                location_msg = "as subtask"
                 script = f'''
 {date_pre_script}
 tell application "OmniFocus"
@@ -125,12 +136,13 @@ tell application "OmniFocus"
             set newTask to make new task with properties {{{properties_str}}}
             {post_creation_str}
         end tell
+        return id of newTask
     end tell
 end tell
-return "Task added successfully as subtask"
 '''
         elif escaped_project:
             # Add to project
+            location_msg = f"to project: {escaped_project}"
             script = f'''
 {date_pre_script}
 tell application "OmniFocus"
@@ -140,21 +152,23 @@ tell application "OmniFocus"
             set newTask to make new task with properties {{{properties_str}}}
             {post_creation_str}
         end tell
+        return id of newTask
     end tell
 end tell
-return "Task added successfully to project: {escaped_project}"
 '''
         else:
-            # Add to inbox
+            # Add to inbox - positioning not supported
+            location_msg = "to inbox"
+            can_reposition = False
             script = f"""
 {date_pre_script}
 tell application "OmniFocus"
     tell default document
         set newTask to make new inbox task with properties {{{properties_str}}}
         {post_creation_str}
+        return id of newTask
     end tell
 end tell
-return "Task added successfully to inbox"
 """
 
         proc = await asyncio.create_subprocess_exec(
@@ -169,6 +183,19 @@ return "Task added successfully to inbox"
         if proc.returncode != 0:
             return f"Error: {stderr.decode()}"
 
-        return stdout.decode().strip()
+        task_id = stdout.decode().strip()
+        result_msg = f"Task added successfully {location_msg}"
+
+        # Handle positioning if requested
+        if position and can_reposition:
+            success, move_msg = await move_task_to_position(task_id, position, reference_task_id)
+            if success:
+                result_msg += f" (positioned at {position})"
+            else:
+                result_msg += f" (positioning failed: {move_msg})"
+        elif position and not can_reposition:
+            result_msg += " (positioning not supported for inbox tasks)"
+
+        return result_msg
     except Exception as e:
         return f"Error adding task: {str(e)}"

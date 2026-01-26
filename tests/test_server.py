@@ -33,7 +33,9 @@ class TestMcpFactory:
             "search",
             "list_perspectives",
             "get_perspective_view",
+            "get_perspective_rules",
             "list_tags",
+            "reorder_tasks",
         ]
 
         for tool_name in expected_tools:

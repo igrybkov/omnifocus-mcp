@@ -75,6 +75,7 @@ mcp_tools/
 ├── batch/           # batch_add_items, batch_remove_items
 ├── query/           # search
 ├── perspectives/    # list_perspectives, get_perspective_view, get_perspective_rules
+├── reorder/         # reorder_tasks
 └── debug/           # dump_database (--expanded only)
 ```
 
@@ -168,15 +169,16 @@ with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as moc
 ### Tool Registration
 
 `server.py` uses FastMCP decorators to register tools:
-- **Standard mode**: 13 core tools
-- **Expanded mode** (`--expanded` flag): Adds dump_database debug tool (14 total)
+- **Standard mode**: 14 core tools
+- **Expanded mode** (`--expanded` flag): Adds dump_database debug tool (15 total)
 
 ## Tools Reference
 
 ### Task Tools
-- `add_omnifocus_task` - Create tasks with full properties (dates incl. planned date, flags, tags, parent tasks)
-- `edit_item` - Edit tasks/projects (dates incl. planned date, flags, tags, status, folder moves)
+- `add_omnifocus_task` - Create tasks with full properties (dates incl. planned date, flags, tags, parent tasks, position)
+- `edit_item` - Edit tasks/projects (dates incl. planned date, flags, tags, status, folder moves, position)
 - `remove_item` - Delete tasks/projects by ID or name
+- `reorder_tasks` - Reorder tasks within a project or parent task (sort, move, or custom order)
 
 ### Project Tools
 - `add_project` - Create projects with properties (dates, flags, tags, folder, sequential)
@@ -202,8 +204,69 @@ with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as moc
 - `get_perspective_view` - View items in a specific perspective
 - `get_perspective_rules` - Get filter rules for a custom perspective (read-only, OmniFocus 4.2+)
 
+### Reorder Tools
+- `reorder_tasks` - Reorder tasks within a project or parent task. Supports three modes:
+  - `sort`: Sort all tasks by a field (name, dueDate, deferDate, plannedDate, flagged, estimatedMinutes)
+  - `move`: Move a single task to a specific position (beginning, ending, before, after)
+  - `custom`: Reorder tasks by providing task IDs in desired order
+
 ### Debug Tools (--expanded only)
 - `dump_database` - Full database dump with formatting options
+
+## Task Positioning
+
+Tasks can be positioned when creating or editing them:
+
+```python
+# Create task at beginning of project
+add_omnifocus_task(name="First task", project="My Project", position="beginning")
+
+# Create task after a specific task
+add_omnifocus_task(
+    name="New task",
+    project="My Project",
+    position="after",
+    reference_task_id="existingTaskId"
+)
+
+# Move existing task to end
+edit_item(id="taskId", new_position="ending")
+
+# Move task before another task
+edit_item(id="taskId", new_position="before", position_reference_task_id="refTaskId")
+```
+
+**Position values:**
+- `beginning` - First task in the container
+- `ending` - Last task in the container
+- `before` - Before the reference task (requires `reference_task_id`)
+- `after` - After the reference task (requires `reference_task_id`)
+
+**Limitations:**
+- Positioning only works for tasks in projects or parent tasks
+- Inbox tasks cannot be repositioned
+- Tag views and perspectives cannot be reordered (OmniFocus limitation)
+
+## Reordering Multiple Tasks
+
+Use `reorder_tasks` for bulk reordering:
+
+```python
+# Sort all tasks in a project by name
+reorder_tasks(container_id="projectId", mode="sort", sort_by="name")
+
+# Sort by due date descending (most urgent first)
+reorder_tasks(container_id="projectId", mode="sort", sort_by="dueDate", sort_order="desc")
+
+# Move a specific task to beginning
+reorder_tasks(container_id="projectId", mode="move", task_id="taskId", position="beginning")
+
+# Custom order - provide task IDs in desired order
+reorder_tasks(container_id="projectId", mode="custom", task_ids=["id3", "id1", "id2"])
+
+# Reorder subtasks within a parent task
+reorder_tasks(container_id="parentTaskId", container_type="task", mode="sort", sort_by="name")
+```
 
 ## Security: AppleScript Injection Prevention
 
