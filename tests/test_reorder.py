@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from omnifocus_mcp.mcp_tools.reorder.move_helper import move_task_to_position
+from omnifocus_mcp.mcp_tools.reorder.move_helper import move_task_to_parent, move_task_to_position
 from omnifocus_mcp.mcp_tools.reorder.reorder_tasks import reorder_tasks
 
 
@@ -230,6 +230,124 @@ class TestMoveTaskToPosition:
 
         assert success is False
         assert "not found" in message
+
+
+class TestMoveTaskToParent:
+    """Tests for move_task_to_parent helper."""
+
+    @pytest.fixture
+    def mock_execute(self):
+        """Create a mock for execute_omnijs_with_params."""
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock:
+            yield mock
+
+    @pytest.mark.asyncio
+    async def test_move_to_parent_task(self, mock_execute):
+        """Test moving task to a parent task."""
+        mock_execute.return_value = {
+            "success": True,
+            "message": "Task moved to task: Parent Task",
+            "taskId": "task123",
+            "newParentId": "parent456",
+            "newParentName": "Parent Task",
+            "newParentType": "task",
+        }
+
+        success, message = await move_task_to_parent(
+            task_id="task123",
+            new_parent_id="parent456",
+        )
+
+        assert success is True
+        assert "moved" in message.lower()
+
+        call_args = mock_execute.call_args
+        assert call_args[0][0] == "move_task_to_parent"
+        params = call_args[0][1]
+        assert params["task_id"] == "task123"
+        assert params["new_parent_id"] == "parent456"
+
+    @pytest.mark.asyncio
+    async def test_move_to_project(self, mock_execute):
+        """Test moving task to a project."""
+        mock_execute.return_value = {
+            "success": True,
+            "message": "Task moved to project: Work",
+            "taskId": "task123",
+            "newParentId": "proj789",
+            "newParentName": "Work",
+            "newParentType": "project",
+        }
+
+        success, message = await move_task_to_parent(
+            task_id="task123",
+            new_parent_id="proj789",
+        )
+
+        assert success is True
+        assert "project" in message.lower()
+
+    @pytest.mark.asyncio
+    async def test_unnest_to_project_root(self, mock_execute):
+        """Test un-nesting task to project root (empty string)."""
+        mock_execute.return_value = {
+            "success": True,
+            "message": "Task moved to project root",
+            "taskId": "task123",
+            "newParentId": "proj789",
+            "newParentName": "Work",
+        }
+
+        success, message = await move_task_to_parent(
+            task_id="task123",
+            new_parent_id="",  # Empty string = un-nest
+        )
+
+        assert success is True
+        assert "project root" in message.lower()
+
+        call_args = mock_execute.call_args
+        params = call_args[0][1]
+        assert params["new_parent_id"] == ""
+
+    @pytest.mark.asyncio
+    async def test_move_error_parent_not_found(self, mock_execute):
+        """Test error when parent not found."""
+        mock_execute.return_value = {"error": "Parent not found: invalid123"}
+
+        success, message = await move_task_to_parent(
+            task_id="task123",
+            new_parent_id="invalid123",
+        )
+
+        assert success is False
+        assert "not found" in message
+
+    @pytest.mark.asyncio
+    async def test_move_error_cannot_move_to_self(self, mock_execute):
+        """Test error when trying to move task to itself."""
+        mock_execute.return_value = {"error": "Cannot move a task to itself"}
+
+        success, message = await move_task_to_parent(
+            task_id="task123",
+            new_parent_id="task123",
+        )
+
+        assert success is False
+        assert "itself" in message
+
+    @pytest.mark.asyncio
+    async def test_move_error_circular_reference(self, mock_execute):
+        """Test error when trying to move task to its descendant."""
+        mock_execute.return_value = {"error": "Cannot move a task to one of its descendants"}
+
+        success, message = await move_task_to_parent(
+            task_id="parent123",
+            new_parent_id="child456",
+        )
+
+        assert success is False
+        assert "descendant" in message
 
 
 class TestAddTaskWithPosition:

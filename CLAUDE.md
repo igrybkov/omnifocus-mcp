@@ -176,7 +176,7 @@ with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as moc
 
 ### Task Tools
 - `add_omnifocus_task` - Create tasks with full properties (dates incl. planned date, flags, tags, parent tasks, position)
-- `edit_item` - Edit tasks/projects (dates incl. planned date, flags, tags, status, folder moves, position)
+- `edit_item` - Edit tasks/projects (dates incl. planned date, flags, tags, status, folder moves, parent changes, position)
 - `remove_item` - Delete tasks/projects by ID or name
 - `reorder_tasks` - Reorder tasks within a project or parent task (sort, move, or custom order)
 
@@ -212,6 +212,53 @@ with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as moc
 
 ### Debug Tools (--expanded only)
 - `dump_database` - Full database dump with formatting options
+
+## Optional Parameter Patterns
+
+For optional parameters that modify existing values, follow this pattern:
+
+| Value | Meaning |
+|-------|---------|
+| `None` | Don't change (skip this field) |
+| `""` (empty string) | Clear the value |
+| A valid value | Set to this value |
+
+This applies to:
+- Date fields (`new_due_date`, `new_defer_date`, `new_planned_date`)
+- Parent/container changes (`new_parent_id`)
+
+Examples:
+```python
+# Don't change due date (default)
+edit_item(id="taskId", new_due_date=None)
+
+# Clear the due date
+edit_item(id="taskId", new_due_date="")
+
+# Set a new due date
+edit_item(id="taskId", new_due_date="2024-01-25")
+```
+
+## Changing Task Parent
+
+Tasks can be moved to a different parent (task or project) using `edit_item`:
+
+```python
+# Move task to become a subtask of another task
+edit_item(id="taskId", new_parent_id="parentTaskId")
+
+# Move task to a project (as a direct child)
+edit_item(id="taskId", new_parent_id="projectId")
+
+# Un-nest: move subtask back to project root
+edit_item(id="taskId", new_parent_id="")
+```
+
+**Notes:**
+- The `new_parent_id` accepts either a task ID or project ID
+- Use empty string to un-nest (move to containing project's root)
+- Cannot move a task to itself or to one of its descendants
+- Inbox tasks cannot be un-nested (they have no containing project)
 
 ## Task Positioning
 

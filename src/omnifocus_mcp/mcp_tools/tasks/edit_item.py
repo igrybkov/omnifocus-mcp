@@ -8,7 +8,7 @@ from ...applescript_builder import (
     process_date_params,
 )
 from ...utils import escape_applescript_string
-from ..reorder.move_helper import move_task_to_position
+from ..reorder.move_helper import move_task_to_parent, move_task_to_position
 
 
 async def edit_item(
@@ -30,6 +30,7 @@ async def edit_item(
     new_sequential: bool | None = None,
     new_folder_name: str | None = None,
     new_project_status: str | None = None,
+    new_parent_id: str | None = None,
     new_position: str | None = None,
     position_reference_task_id: str | None = None,
 ) -> str:
@@ -56,6 +57,8 @@ async def edit_item(
         new_sequential: Whether the project should be sequential (projects only, optional)
         new_folder_name: New folder to move the project to (projects only, optional)
         new_project_status: New status for projects: 'active', 'completed', 'dropped', 'onHold' (optional)
+        new_parent_id: New parent task or project ID (tasks only, optional).
+            Use empty string to un-nest (move to project root).
         new_position: New position within container - 'beginning', 'ending', 'before', 'after'
             (tasks only, not supported for inbox tasks or projects)
         position_reference_task_id: ID of reference task (required when new_position is
@@ -191,9 +194,11 @@ move {item_var} to end of projects of targetFolder''')
         # Build result message
         changes_str = ", ".join(changes) if changes else "no changes"
 
-        # For tasks with position change, we need the task ID
-        # Return both a success indicator and the ID
-        if item_type == "task" and new_position:
+        # Check if we need post-edit operations (parent change or position change)
+        needs_task_id = item_type == "task" and (new_parent_id is not None or new_position)
+
+        # For tasks with parent/position change, we need the task ID
+        if needs_task_id:
             script = f"""
 {date_pre_script}
 tell application "OmniFocus"
@@ -231,19 +236,33 @@ return "{result_msg}"
 
         output = stdout.decode().strip()
 
-        # Handle position change for tasks
-        if item_type == "task" and new_position:
+        # Handle post-edit operations for tasks
+        if needs_task_id:
             task_id = output  # The script returned the task ID
             result_msg = f"Task updated successfully. Changed: {changes_str}"
 
-            success, move_msg = await move_task_to_position(
-                task_id, new_position, position_reference_task_id
-            )
-            if success:
-                result_msg += f" (repositioned to {new_position})"
-                changes.append("position")
-            else:
-                result_msg += f" (repositioning failed: {move_msg})"
+            # Handle parent change first (if specified)
+            if new_parent_id is not None:
+                success, parent_msg = await move_task_to_parent(task_id, new_parent_id)
+                if success:
+                    if new_parent_id == "":
+                        result_msg += " (moved to project root)"
+                    else:
+                        result_msg += " (moved to new parent)"
+                    changes.append("parent")
+                else:
+                    result_msg += f" (parent change failed: {parent_msg})"
+
+            # Handle position change (if specified)
+            if new_position:
+                success, move_msg = await move_task_to_position(
+                    task_id, new_position, position_reference_task_id
+                )
+                if success:
+                    result_msg += f" (repositioned to {new_position})"
+                    changes.append("position")
+                else:
+                    result_msg += f" (repositioning failed: {move_msg})"
 
             return result_msg
 
