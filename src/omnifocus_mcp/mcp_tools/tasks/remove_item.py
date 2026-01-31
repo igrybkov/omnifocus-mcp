@@ -1,4 +1,8 @@
-"""Remove item tool for OmniFocus."""
+"""Remove item tool for OmniFocus.
+
+Note: This tool drops items (marks them as dropped) instead of physically deleting them.
+This preserves data and allows recovery if needed.
+"""
 
 import asyncio
 
@@ -12,6 +16,9 @@ async def remove_item(
 ) -> str:
     """
     Remove a task or project from OmniFocus.
+
+    Note: Items are dropped (marked as dropped status) rather than physically deleted.
+    This preserves data and allows recovery if needed.
 
     Args:
         name: The name of the task or project to remove (used if id not provided)
@@ -31,15 +38,21 @@ async def remove_item(
 
         # Build result message
         if id:
-            result_msg = f"{item_type.capitalize()} removed successfully (by ID)"
+            result_msg = f"{item_type.capitalize()} dropped successfully (by ID)"
         else:
-            result_msg = f"{item_type.capitalize()} removed successfully: {name}"
+            result_msg = f"{item_type.capitalize()} dropped successfully: {name}"
+
+        # Drop items instead of deleting - different syntax for tasks vs projects
+        if item_type == "project":
+            drop_statement = "set status of theItem to dropped status"
+        else:
+            drop_statement = "set dropped of theItem to true"
 
         script = f'''
 tell application "OmniFocus"
     tell default document
         {find_clause}
-        delete theItem
+        {drop_statement}
     end tell
 end tell
 return "{result_msg}"

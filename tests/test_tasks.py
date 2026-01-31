@@ -301,17 +301,17 @@ class TestEditItemParentChange:
 
 
 class TestRemoveItem:
-    """Tests for remove_item function."""
+    """Tests for remove_item function (drops items instead of deleting)."""
 
     @pytest.mark.asyncio
     async def test_remove_task(self):
-        """Test removing a task."""
+        """Test removing (dropping) a task."""
         with patch(
             "omnifocus_mcp.mcp_tools.tasks.remove_item.asyncio.create_subprocess_exec"
         ) as mock_exec:
             # Setup mock
             mock_process = AsyncMock()
-            mock_process.communicate.return_value = (b"Task removed successfully: Test Task", b"")
+            mock_process.communicate.return_value = (b"Task dropped successfully: Test Task", b"")
             mock_process.returncode = 0
             mock_exec.return_value = mock_process
 
@@ -319,19 +319,24 @@ class TestRemoveItem:
             result = await remove_item(name="Test Task")
 
             # Verify
-            assert "Task removed successfully" in result
+            assert "Task dropped successfully" in result
             mock_exec.assert_called_once()
+            # Verify the script uses 'set dropped' instead of 'delete'
+            call_args = mock_exec.call_args
+            script = call_args[0][2]
+            assert "set dropped of theItem to true" in script
+            assert "delete" not in script
 
     @pytest.mark.asyncio
     async def test_remove_project(self):
-        """Test removing a project."""
+        """Test removing (dropping) a project."""
         with patch(
             "omnifocus_mcp.mcp_tools.tasks.remove_item.asyncio.create_subprocess_exec"
         ) as mock_exec:
             # Setup mock
             mock_process = AsyncMock()
             mock_process.communicate.return_value = (
-                b"Project removed successfully: Test Project",
+                b"Project dropped successfully: Test Project",
                 b"",
             )
             mock_process.returncode = 0
@@ -341,8 +346,13 @@ class TestRemoveItem:
             result = await remove_item(name="Test Project", item_type="project")
 
             # Verify
-            assert "Project removed successfully" in result
+            assert "Project dropped successfully" in result
             mock_exec.assert_called_once()
+            # Verify the script uses 'dropped status' instead of 'delete'
+            call_args = mock_exec.call_args
+            script = call_args[0][2]
+            assert "set status of theItem to dropped status" in script
+            assert "delete" not in script
 
     @pytest.mark.asyncio
     async def test_remove_item_escapes_special_characters(self):
@@ -352,7 +362,7 @@ class TestRemoveItem:
         ) as mock_exec:
             # Setup mock
             mock_process = AsyncMock()
-            mock_process.communicate.return_value = (b"Task removed successfully", b"")
+            mock_process.communicate.return_value = (b"Task dropped successfully", b"")
             mock_process.returncode = 0
             mock_exec.return_value = mock_process
 
@@ -360,7 +370,7 @@ class TestRemoveItem:
             result = await remove_item(name='Task "with" quotes')
 
             # Verify
-            assert "Task removed successfully" in result
+            assert "Task dropped successfully" in result
             # Check that osascript was called with escaped string
             call_args = mock_exec.call_args
             script = call_args[0][2]

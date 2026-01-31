@@ -1,4 +1,8 @@
-"""Batch remove items tool for OmniFocus."""
+"""Batch remove items tool for OmniFocus.
+
+Note: This tool drops items (marks them as dropped) instead of physically deleting them.
+This preserves data and allows recovery if needed.
+"""
 
 import json
 from typing import Any
@@ -13,6 +17,9 @@ async def batch_remove_items(
     """
     Remove multiple tasks or projects from OmniFocus in a single operation.
 
+    Note: Items are dropped (marked as dropped status) rather than physically deleted.
+    This preserves data and allows recovery if needed.
+
     Args:
         items: List of items to remove. Each item is a dict with:
             - id: Optional ID of the item (preferred)
@@ -23,7 +30,7 @@ async def batch_remove_items(
         JSON string with results in the following format:
         {
             "total": <number of items attempted>,
-            "success": <number of items removed successfully>,
+            "success": <number of items dropped successfully>,
             "failed": <number of items that failed>,
             "results": [
                 {
