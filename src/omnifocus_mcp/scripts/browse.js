@@ -43,9 +43,24 @@ try {
     }
 
     // Function to map a project to output format
-    function mapProject(project) {
+    // folder parameter is optional - the folder containing this project
+    function mapProject(project, folder) {
         var result = mapProjectFields(project, requestedFields);
         result.type = "project";
+
+        // Override folder fields with context (OmniJS doesn't expose project.folder)
+        if (folder) {
+            result.folderName = folder.name;
+            result.folderId = folder.id.primaryKey;
+            // Build folderPath by walking up the folder hierarchy
+            var path = [];
+            var currentFolder = folder;
+            while (currentFolder) {
+                path.unshift(currentFolder.name);
+                currentFolder = currentFolder.parent;
+            }
+            result.folderPath = path;
+        }
 
         // Add tasks if requested
         if (includeTasks && project.tasks) {
@@ -150,7 +165,7 @@ try {
                 var project = folder.projects[j];
                 if (projectPassesFilter(project)) {
                     projectCount++;
-                    result.children.push(mapProject(project));
+                    result.children.push(mapProject(project, folder));
                 }
             }
         }
@@ -263,7 +278,7 @@ try {
                     var project = folder.projects[i];
                     if (projectPassesFilter(project)) {
                         projectCount++;
-                        tree.push(mapProject(project));
+                        tree.push(mapProject(project, folder));
                     }
                 }
             }
@@ -286,7 +301,7 @@ try {
             var project = rootProjects[i];
             if (projectPassesFilter(project)) {
                 projectCount++;
-                tree.push(mapProject(project));
+                tree.push(mapProject(project, null));
             }
         }
     }

@@ -34,6 +34,38 @@ try {
 
     var fieldsToInclude = requestedFields || getDefaultFields();
 
+    // Build project-to-folder mapping (OmniJS doesn't expose project.folder)
+    var projectToFolder = {};
+    if (entityType === "projects") {
+        function mapProjectsInFolder(folder) {
+            if (folder.projects) {
+                for (var i = 0; i < folder.projects.length; i++) {
+                    var proj = folder.projects[i];
+                    var folderPath = [];
+                    var currentFolder = folder;
+                    while (currentFolder) {
+                        folderPath.unshift(currentFolder.name);
+                        currentFolder = currentFolder.parent;
+                    }
+                    projectToFolder[proj.id.primaryKey] = {
+                        folderId: folder.id.primaryKey,
+                        folderName: folder.name,
+                        folderPath: folderPath
+                    };
+                }
+            }
+            if (folder.folders) {
+                for (var j = 0; j < folder.folders.length; j++) {
+                    mapProjectsInFolder(folder.folders[j]);
+                }
+            }
+        }
+        var allFolders = flattenedFolders;
+        for (var i = 0; i < allFolders.length; i++) {
+            mapProjectsInFolder(allFolders[i]);
+        }
+    }
+
     // Get items based on entity type
     var items = [];
     if (entityType === "tasks") {
@@ -98,7 +130,15 @@ try {
         if (entityType === "tasks") {
             return mapTaskFields(item, fieldsToInclude);
         } else if (entityType === "projects") {
-            return mapProjectFields(item, fieldsToInclude);
+            var result = mapProjectFields(item, fieldsToInclude);
+            // Override folder fields with our mapping (OmniJS doesn't expose project.folder)
+            var folderInfo = projectToFolder[item.id.primaryKey];
+            if (folderInfo) {
+                result.folderName = folderInfo.folderName;
+                result.folderId = folderInfo.folderId;
+                result.folderPath = folderInfo.folderPath;
+            }
+            return result;
         } else {
             return mapFolderFields(item, fieldsToInclude);
         }
