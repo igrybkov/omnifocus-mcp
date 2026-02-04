@@ -196,8 +196,12 @@ with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as moc
 - `batch_remove_items` - Bulk delete tasks/projects
 
 ### Query Tools
-- `search` - Powerful filtered queries (by project, tags, status, dates, planned_within, folderPath)
+- `search` - Powerful filtered queries with optional aggregation and grouping
   - Date filters support natural language: "tomorrow", "next week", "in 3 days", etc.
+  - **Aggregation support**: Group results by any field and compute statistics per group
+  - **Nested grouping**: Multi-level aggregations (e.g., group by status, then by folder)
+  - **Filtered counts**: Conditional aggregations (e.g., count stuck projects per group)
+  - **Examples**: Include sample items with each group for context
 
 ### Perspective Tools
 - `list_perspectives` - List built-in and custom perspectives
@@ -345,6 +349,210 @@ Supported formats:
 - ISO: "2024-01-25", "2024-01-25T14:30:00"
 
 Uses the `dateparser` library with `PREFER_DATES_FROM: future` for ambiguous dates.
+
+## Search Aggregation and Grouping
+
+The `search` tool supports powerful aggregation capabilities to reduce token consumption and enable server-side data summarization. This is particularly useful for portfolio reviews, planning workflows, and dashboards.
+
+### Basic Grouping
+
+Group results by any field and count items per group:
+
+```python
+# Group projects by folder
+search(
+    entity="projects",
+    group_by="folderName",
+    aggregations={"count": "count"}
+)
+
+# Output:
+{
+    "entity": "projects",
+    "groupedBy": "folderName",
+    "groups": [
+        {"folderName": "Work", "count": 15},
+        {"folderName": "Personal", "count": 8},
+        {"folderName": "Goals", "count": 6}
+    ]
+}
+```
+
+### Filtered Aggregations
+
+Compute conditional counts within each group:
+
+```python
+# Count stuck projects per folder (not modified in 21+ days)
+search(
+    entity="projects",
+    group_by="folderName",
+    aggregations={
+        "count": "count",
+        "stuck_count": {"filter": {"modified_before": 21}, "aggregate": "count"}
+    },
+    filters={"status": ["Active"]}
+)
+
+# Output:
+{
+    "groups": [
+        {"folderName": "Work", "count": 15, "stuck_count": 3},
+        {"folderName": "Personal", "count": 8, "stuck_count": 1}
+    ]
+}
+```
+
+### Nested Grouping
+
+Create multi-level aggregations for portfolio views:
+
+```python
+# Group by status, then by folder within each status
+search(
+    entity="projects",
+    group_by="status",
+    aggregations={
+        "count": "count",
+        "by_folder": {
+            "group_by": "folderName",
+            "count": "count",
+            "stuck_count": {"filter": {"modified_before": 21}, "aggregate": "count"}
+        }
+    }
+)
+
+# Output:
+{
+    "groups": [
+        {
+            "status": "Active",
+            "count": 23,
+            "by_folder": [
+                {"folderName": "Work", "count": 15, "stuck_count": 3},
+                {"folderName": "Goals", "count": 8, "stuck_count": 1}
+            ]
+        },
+        {
+            "status": "OnHold",
+            "count": 5,
+            "by_folder": [...]
+        }
+    ]
+}
+```
+
+### Including Examples
+
+Include sample items with each group for context:
+
+```python
+# Group projects with 2 examples per group
+search(
+    entity="projects",
+    group_by="folderName",
+    aggregations={
+        "count": "count",
+        "examples": {
+            "include_examples": 2,
+            "example_fields": ["id", "name", "dueDate"]
+        }
+    }
+)
+
+# Output:
+{
+    "groups": [
+        {
+            "folderName": "Work",
+            "count": 15,
+            "examples": [
+                {"id": "proj1", "name": "Auth refactor", "dueDate": "2026-02-15"},
+                {"id": "proj2", "name": "Q1 Planning", "dueDate": null}
+            ]
+        }
+    ]
+}
+```
+
+### Real-World Use Cases
+
+**Monthly Review - Portfolio Overview:**
+```python
+# Single query replacing multiple separate queries
+search(
+    entity="projects",
+    group_by="status",
+    aggregations={
+        "count": "count",
+        "by_folder": {
+            "group_by": "folderName",
+            "count": "count",
+            "stuck_count": {"filter": {"modified_before": 21}, "aggregate": "count"}
+        }
+    },
+    filters={"status": ["Active", "OnHold", "Done"]}
+)
+```
+**Token savings: ~4,300 → 600 tokens (86% reduction)**
+
+**Weekly Review - Overdue Tasks by Project:**
+```python
+search(
+    entity="tasks",
+    group_by="projectName",
+    aggregations={
+        "overdue_count": {"filter": {"due_within": -7}, "aggregate": "count"},
+        "flagged_count": {"filter": {"flagged": True}, "aggregate": "count"},
+        "examples": {
+            "include_examples": 3,
+            "example_fields": ["id", "name", "dueDate"]
+        }
+    }
+)
+```
+**Token savings: ~1,800 → 200 tokens (89% reduction)**
+
+**Daily Planning - Available Tasks Summary:**
+```python
+search(
+    entity="tasks",
+    group_by="projectName",
+    aggregations={
+        "due_today": {"filter": {"due_within": 0}, "aggregate": "count"},
+        "flagged": {"filter": {"flagged": True}, "aggregate": "count"},
+        "quick_wins": {"filter": {"estimated_minutes_less_than": 30}, "aggregate": "count"}
+    },
+    filters={"status": ["Available"]}
+)
+```
+**Token savings: ~2,000 → 400 tokens (80% reduction)**
+
+### Backward Compatibility
+
+When `group_by` is not specified, `search` returns the original format with individual items:
+
+```python
+# Without aggregation - returns all items
+search(entity="projects", filters={"status": ["Active"]})
+
+# Output (original format):
+{
+    "count": 23,
+    "entity": "projects",
+    "items": [
+        {"id": "...", "name": "...", "status": "Active", ...},
+        ...
+    ]
+}
+```
+
+### Performance Notes
+
+- Aggregation is performed server-side after filtering and sorting
+- `limit` parameter is applied before aggregation
+- Grouping with `include_examples` allows combining summary stats with representative samples
+- Nested aggregations can be arbitrarily deep (group by status → folder → tags, etc.)
 
 ## Design Decisions
 
