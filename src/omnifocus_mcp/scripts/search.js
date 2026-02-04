@@ -1,8 +1,10 @@
-// Search OmniFocus database with powerful filters
+// Search OmniFocus database with powerful filters and aggregation
 // Requires: common/status_maps.js, common/filters.js, common/field_mappers.js
 // Params: {
 //   entity: string ('tasks' | 'projects' | 'folders'),
 //   filters: object,
+//   group_by: string | null (field to group by),
+//   aggregations: object | null (aggregations to compute per group),
 //   fields: string[] | null,
 //   limit: number | null,
 //   sort_by: string | null,
@@ -125,8 +127,8 @@ try {
         });
     }
 
-    // Map to output format using shared field mappers
-    var results = filtered.map(function(item) {
+    // Helper function to map item to output format
+    function mapItemToOutput(item) {
         if (entityType === "tasks") {
             return mapTaskFields(item, fieldsToInclude);
         } else if (entityType === "projects") {
@@ -142,7 +144,111 @@ try {
         } else {
             return mapFolderFields(item, fieldsToInclude);
         }
-    });
+    }
+
+    // Helper function to create a filter from aggregation filter spec
+    function createFilterFromAggregation(filterSpec) {
+        return function(item) {
+            // Create appropriate filter function based on entity type
+            var filterFn;
+            if (entityType === "tasks") {
+                filterFn = createTaskFilter(filterSpec, { includeCompleted: true });
+            } else if (entityType === "projects") {
+                filterFn = createProjectFilter(filterSpec, { includeCompleted: true });
+            } else {
+                filterFn = function() { return true; };
+            }
+            return filterFn(item);
+        };
+    }
+
+    // Helper function to aggregate results
+    function aggregateResults(items, groupBy, aggregations, fieldsToInclude) {
+        // Group items by the specified field
+        var groups = {};
+        for (var i = 0; i < items.length; i++) {
+            var item = items[i];
+            var groupKey = item[groupBy];
+
+            // Handle null/undefined grouping keys
+            if (groupKey === null || groupKey === undefined) {
+                groupKey = "(none)";
+            } else if (groupBy === "status" && entityType === "projects") {
+                // Map project status enum to string
+                groupKey = projectStatusMap[groupKey] || String(groupKey);
+            } else if (groupBy === "taskStatus" && entityType === "tasks") {
+                // Map task status enum to string
+                groupKey = taskStatusMap[groupKey] || String(groupKey);
+            } else {
+                // Convert to string for consistent grouping
+                groupKey = String(groupKey);
+            }
+
+            if (!groups[groupKey]) {
+                groups[groupKey] = [];
+            }
+            groups[groupKey].push(item);
+        }
+
+        // Apply aggregations to each group
+        var results = [];
+        for (var key in groups) {
+            var group = groups[key];
+            var result = {};
+            result[groupBy] = key === "(none)" ? null : key;
+
+            // Process each aggregation
+            for (var aggName in aggregations) {
+                var agg = aggregations[aggName];
+
+                if (agg === "count") {
+                    result[aggName] = group.length;
+                } else if (typeof agg === "object") {
+                    // Nested aggregation or filtered count
+                    if (agg.group_by) {
+                        // Recursive nested grouping
+                        result[aggName] = aggregateResults(group, agg.group_by, agg, fieldsToInclude);
+                    } else if (agg.filter) {
+                        // Filtered count
+                        var filtered = group.filter(createFilterFromAggregation(agg.filter));
+                        if (agg.aggregate === "count") {
+                            result[aggName] = filtered.length;
+                        } else {
+                            result[aggName] = filtered.length;  // Default to count
+                        }
+                    } else if (agg.include_examples) {
+                        // Include sample items
+                        var exampleFields = agg.example_fields || fieldsToInclude;
+                        result[aggName] = group.slice(0, agg.include_examples).map(function(item) {
+                            return mapItemToOutput(item);
+                        });
+                    }
+                }
+            }
+
+            results.push(result);
+        }
+
+        return results;
+    }
+
+    // Apply aggregation if requested
+    if (params.group_by) {
+        var aggregatedResults = aggregateResults(
+            filtered,
+            params.group_by,
+            params.aggregations || {"count": "count"},
+            fieldsToInclude
+        );
+        return JSON.stringify({
+            entity: entityType,
+            groupedBy: params.group_by,
+            groups: aggregatedResults
+        });
+    }
+
+    // Map to output format using shared field mappers (non-aggregated)
+    var results = filtered.map(mapItemToOutput);
 
     return JSON.stringify({
         count: results.length,

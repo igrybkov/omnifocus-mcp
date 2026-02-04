@@ -16,6 +16,8 @@ SEARCH_INCLUDES = [
 async def search(
     entity: str,
     filters: dict[str, Any] | None = None,
+    group_by: str | None = None,
+    aggregations: dict[str, Any] | None = None,
     fields: list[str] | None = None,
     limit: int | None = None,
     sort_by: str | None = None,
@@ -24,7 +26,7 @@ async def search(
     summary: bool = False,
 ) -> str:
     """
-    Search OmniFocus database with powerful filters.
+    Search OmniFocus database with powerful filters and optional aggregation.
 
     Much faster than dump_database for targeted queries.
 
@@ -55,16 +57,26 @@ async def search(
                 but have no available tasks (no tasks with Available or DueSoon status)
             - has_note: Filter by note presence
             - available: For projects, filter to Active + not deferred
+        group_by: Optional field to group results by (e.g., "folderName", "status", "tagNames").
+            When specified, returns aggregated data instead of individual items.
+        aggregations: Optional aggregations to compute per group (only used when group_by is set):
+            - "count": Number of items in group
+            - {"group_by": "field", ...}: Nested grouping (e.g., group by status, then by folder)
+            - {"filter": {...}, "aggregate": "count"}: Conditional count (e.g., count stuck projects)
+            - {"include_examples": N, "example_fields": [...]}: Include N sample items with specified fields
+            Example: {"count": "count", "stuck_count": {"filter": {"modified_before": 21}, "aggregate": "count"}}
         fields: Specific fields to return (reduces response size). Task fields include:
             plannedDate, effectivePlannedDate, effectiveDueDate, effectiveDeferDate, folderPath
-        limit: Maximum number of items to return
+        limit: Maximum number of items to return (applied before aggregation)
         sort_by: Field to sort by (name, dueDate, deferDate, plannedDate, modificationDate, etc.)
         sort_order: Sort order: 'asc' or 'desc' (default: 'asc')
         include_completed: Include completed/dropped items (default: False)
         summary: Return only count of matches (default: False)
 
     Returns:
-        JSON string with query results or count
+        JSON string with query results, aggregated groups, or count.
+        When group_by is used, returns: {"entity": "...", "groupedBy": "...", "groups": [...]}
+        When group_by is None, returns: {"count": N, "entity": "...", "items": [...]}
     """
     # Preprocess date filters to convert natural language to numeric days
     processed_filters = preprocess_date_filters(filters or {})
@@ -78,6 +90,8 @@ async def search(
         {
             "entity": entity,
             "filters": processed_filters,
+            "group_by": group_by,
+            "aggregations": aggregations,
             "fields": fields,
             "limit": limit,
             "sort_by": sort_by,
