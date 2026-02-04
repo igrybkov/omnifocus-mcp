@@ -362,3 +362,233 @@ class TestSearch:
 
             script_name, params, *_ = mock_exec.call_args[0]
             assert params["sort_order"] == "asc"
+
+    # Aggregation tests
+    @pytest.mark.asyncio
+    async def test_search_with_group_by(self):
+        """Test search with group_by parameter."""
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
+            mock_exec.return_value = {
+                "entity": "projects",
+                "groupedBy": "folderName",
+                "groups": [
+                    {"folderName": "Work", "count": 8},
+                    {"folderName": "Personal", "count": 5},
+                ],
+            }
+
+            result = await search(entity="projects", group_by="folderName")
+            result_data = json.loads(result)
+
+            assert result_data["entity"] == "projects"
+            assert result_data["groupedBy"] == "folderName"
+            assert len(result_data["groups"]) == 2
+            assert result_data["groups"][0]["folderName"] == "Work"
+            assert result_data["groups"][0]["count"] == 8
+
+            script_name, params, *_ = mock_exec.call_args[0]
+            assert params["group_by"] == "folderName"
+
+    @pytest.mark.asyncio
+    async def test_search_with_group_by_and_aggregations(self):
+        """Test search with group_by and custom aggregations."""
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
+            mock_exec.return_value = {
+                "entity": "projects",
+                "groupedBy": "status",
+                "groups": [
+                    {
+                        "status": "Active",
+                        "count": 23,
+                        "stuck_count": 3,
+                    },
+                    {
+                        "status": "OnHold",
+                        "count": 5,
+                        "stuck_count": 2,
+                    },
+                ],
+            }
+
+            aggregations = {
+                "count": "count",
+                "stuck_count": {"filter": {"modified_before": 21}, "aggregate": "count"},
+            }
+
+            result = await search(entity="projects", group_by="status", aggregations=aggregations)
+            result_data = json.loads(result)
+
+            assert result_data["groupedBy"] == "status"
+            assert result_data["groups"][0]["stuck_count"] == 3
+            assert result_data["groups"][1]["stuck_count"] == 2
+
+            script_name, params, *_ = mock_exec.call_args[0]
+            assert params["aggregations"] == aggregations
+
+    @pytest.mark.asyncio
+    async def test_search_with_nested_aggregation(self):
+        """Test search with nested grouping."""
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
+            mock_exec.return_value = {
+                "entity": "projects",
+                "groupedBy": "status",
+                "groups": [
+                    {
+                        "status": "Active",
+                        "count": 23,
+                        "by_folder": [
+                            {"folderName": "Work", "count": 15},
+                            {"folderName": "Personal", "count": 8},
+                        ],
+                    },
+                ],
+            }
+
+            aggregations = {
+                "count": "count",
+                "by_folder": {"group_by": "folderName", "count": "count"},
+            }
+
+            result = await search(entity="projects", group_by="status", aggregations=aggregations)
+            result_data = json.loads(result)
+
+            assert result_data["groups"][0]["by_folder"][0]["folderName"] == "Work"
+            assert result_data["groups"][0]["by_folder"][0]["count"] == 15
+
+            script_name, params, *_ = mock_exec.call_args[0]
+            assert params["aggregations"]["by_folder"]["group_by"] == "folderName"
+
+    @pytest.mark.asyncio
+    async def test_search_with_include_examples(self):
+        """Test search with include_examples in aggregation."""
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
+            mock_exec.return_value = {
+                "entity": "projects",
+                "groupedBy": "folderName",
+                "groups": [
+                    {
+                        "folderName": "Work",
+                        "count": 8,
+                        "examples": [
+                            {"id": "proj1", "name": "Project 1", "dueDate": "2026-02-15"},
+                            {"id": "proj2", "name": "Project 2", "dueDate": None},
+                        ],
+                    },
+                ],
+            }
+
+            aggregations = {
+                "count": "count",
+                "examples": {
+                    "include_examples": 2,
+                    "example_fields": ["id", "name", "dueDate"],
+                },
+            }
+
+            result = await search(
+                entity="projects", group_by="folderName", aggregations=aggregations
+            )
+            result_data = json.loads(result)
+
+            assert len(result_data["groups"][0]["examples"]) == 2
+            assert result_data["groups"][0]["examples"][0]["name"] == "Project 1"
+
+            script_name, params, *_ = mock_exec.call_args[0]
+            assert params["aggregations"]["examples"]["include_examples"] == 2
+
+    @pytest.mark.asyncio
+    async def test_search_backward_compatibility_no_group_by(self):
+        """Test that search without group_by returns original format."""
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
+            mock_exec.return_value = {
+                "count": 2,
+                "entity": "tasks",
+                "items": [
+                    {"id": "task1", "name": "Task 1"},
+                    {"id": "task2", "name": "Task 2"},
+                ],
+            }
+
+            result = await search(entity="tasks")
+            result_data = json.loads(result)
+
+            # Should return original format (not grouped)
+            assert "count" in result_data
+            assert "items" in result_data
+            assert "groups" not in result_data
+            assert "groupedBy" not in result_data
+
+            script_name, params, *_ = mock_exec.call_args[0]
+            assert params["group_by"] is None
+            assert params["aggregations"] is None
+
+    @pytest.mark.asyncio
+    async def test_search_group_by_with_filters(self):
+        """Test that group_by works alongside filters."""
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
+            mock_exec.return_value = {
+                "entity": "projects",
+                "groupedBy": "folderName",
+                "groups": [{"folderName": "Work", "count": 5}],
+            }
+
+            await search(
+                entity="projects",
+                group_by="folderName",
+                filters={"status": ["Active"]},
+            )
+
+            script_name, params, *_ = mock_exec.call_args[0]
+            assert params["group_by"] == "folderName"
+            assert params["filters"]["status"] == ["Active"]
+
+    @pytest.mark.asyncio
+    async def test_search_multi_level_nested_aggregation(self):
+        """Test search with complex multi-level nested aggregation."""
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
+            mock_exec.return_value = {
+                "entity": "projects",
+                "groupedBy": "status",
+                "groups": [
+                    {
+                        "status": "Active",
+                        "count": 23,
+                        "by_folder": [
+                            {
+                                "folderName": "Work",
+                                "count": 15,
+                                "stuck_count": 3,
+                                "goal_count": 0,
+                            },
+                            {
+                                "folderName": "Goals",
+                                "count": 8,
+                                "stuck_count": 1,
+                                "goal_count": 8,
+                            },
+                        ],
+                    },
+                ],
+            }
+
+            aggregations = {
+                "count": "count",
+                "by_folder": {
+                    "group_by": "folderName",
+                    "count": "count",
+                    "stuck_count": {"filter": {"modified_before": 21}, "aggregate": "count"},
+                    "goal_count": {
+                        "filter": {"folder_name_contains": "Goals"},
+                        "aggregate": "count",
+                    },
+                },
+            }
+
+            result = await search(entity="projects", group_by="status", aggregations=aggregations)
+            result_data = json.loads(result)
+
+            folder_groups = result_data["groups"][0]["by_folder"]
+            assert folder_groups[0]["stuck_count"] == 3
+            assert folder_groups[0]["goal_count"] == 0
+            assert folder_groups[1]["stuck_count"] == 1
+            assert folder_groups[1]["goal_count"] == 8
