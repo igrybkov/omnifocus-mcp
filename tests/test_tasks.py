@@ -3,6 +3,7 @@
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from mcp.server.fastmcp.utilities.func_metadata import func_metadata
 
 from omnifocus_mcp.mcp_tools.tasks.add_task import add_omnifocus_task
 from omnifocus_mcp.mcp_tools.tasks.edit_item import edit_item
@@ -588,3 +589,96 @@ class TestRemoveItemViaOmniJS:
             result = await remove_item(name="Nonexistent Task")
 
             assert "Error:" in result
+
+
+class TestEditItemIdAlias:
+    """Tests that edit_item accepts 'item_id' as an alias for 'id' via FastMCP validation."""
+
+    def test_edit_item_schema_shows_id_not_item_id(self):
+        """JSON schema should expose 'id', not 'item_id'."""
+        meta = func_metadata(edit_item)
+        schema = meta.arg_model.model_json_schema(by_alias=True)
+        assert "id" in schema["properties"]
+        assert "item_id" not in schema["properties"]
+
+    def test_edit_item_validates_with_id(self):
+        """Standard 'id' input should validate and pass through."""
+        meta = func_metadata(edit_item)
+        model = meta.arg_model.model_validate({"id": "task-123"})
+        dumped = model.model_dump_one_level()
+        assert dumped["id"] == "task-123"
+
+    def test_edit_item_validates_with_item_id(self):
+        """Alias 'item_id' should validate and map to the 'id' parameter."""
+        meta = func_metadata(edit_item)
+        model = meta.arg_model.model_validate({"item_id": "task-456"})
+        dumped = model.model_dump_one_level()
+        assert dumped["id"] == "task-456"
+
+    @pytest.mark.asyncio
+    async def test_edit_item_end_to_end_with_item_id(self):
+        """Full validation pipeline: item_id input -> edit_item receives id parameter."""
+        meta = func_metadata(edit_item)
+        with (
+            patch(
+                "omnifocus_mcp.mcp_tools.tasks.edit_item.asyncio.create_subprocess_exec"
+            ) as mock_exec,
+            patch("omnifocus_mcp.mcp_tools.tasks.edit_item.change_task_status") as mock_status,
+        ):
+            mock_process = AsyncMock()
+            mock_process.communicate.return_value = (b"task-789", b"")
+            mock_process.returncode = 0
+            mock_exec.return_value = mock_process
+            mock_status.return_value = (True, "Task status changed to completed")
+
+            result = await meta.call_fn_with_arg_validation(
+                edit_item,
+                fn_is_async=True,
+                arguments_to_validate={"item_id": "task-789", "new_status": "completed"},
+                arguments_to_pass_directly=None,
+            )
+
+            assert "Task updated successfully" in result
+            mock_status.assert_called_once_with("task-789", "completed")
+
+
+class TestRemoveItemIdAlias:
+    """Tests that remove_item accepts 'item_id' as an alias for 'id' via FastMCP validation."""
+
+    def test_remove_item_schema_shows_id_not_item_id(self):
+        """JSON schema should expose 'id', not 'item_id'."""
+        meta = func_metadata(remove_item)
+        schema = meta.arg_model.model_json_schema(by_alias=True)
+        assert "id" in schema["properties"]
+        assert "item_id" not in schema["properties"]
+
+    def test_remove_item_validates_with_id(self):
+        """Standard 'id' input should validate and pass through."""
+        meta = func_metadata(remove_item)
+        model = meta.arg_model.model_validate({"id": "task-123"})
+        dumped = model.model_dump_one_level()
+        assert dumped["id"] == "task-123"
+
+    def test_remove_item_validates_with_item_id(self):
+        """Alias 'item_id' should validate and map to the 'id' parameter."""
+        meta = func_metadata(remove_item)
+        model = meta.arg_model.model_validate({"item_id": "task-456"})
+        dumped = model.model_dump_one_level()
+        assert dumped["id"] == "task-456"
+
+    @pytest.mark.asyncio
+    async def test_remove_item_end_to_end_with_item_id(self):
+        """Full validation pipeline: item_id input -> remove_item receives id parameter."""
+        meta = func_metadata(remove_item)
+        with patch("omnifocus_mcp.mcp_tools.tasks.remove_item.change_task_status") as mock_status:
+            mock_status.return_value = (True, "Task status changed to dropped")
+
+            result = await meta.call_fn_with_arg_validation(
+                remove_item,
+                fn_is_async=True,
+                arguments_to_validate={"item_id": "task-789"},
+                arguments_to_pass_directly=None,
+            )
+
+            assert "Task dropped successfully" in result
+            mock_status.assert_called_once_with("task-789", "dropped")

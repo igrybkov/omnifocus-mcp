@@ -157,6 +157,27 @@ return json.dumps(build_batch_summary(results), indent=2)
 - Use `taskStatusMapAbbrev`/`projectStatusMapAbbrev` for compact output
 - Use `isWithinDays(date, days, requirePastOrPresent)` for date range checks
 
+**For parameter aliases (accepting alternate input names):**
+
+AI agents sometimes use alternate parameter names (e.g. `item_id` instead of `id`). Use Pydantic v2's `validation_alias` with `AliasChoices` to silently accept these while keeping the schema clean:
+
+```python
+from typing import Annotated
+from pydantic import AliasChoices, Field
+
+async def my_tool(
+    id: Annotated[str | None, Field(validation_alias=AliasChoices("id", "item_id"))] = None,
+) -> str:
+    ...
+```
+
+How it works with FastMCP:
+- `model_json_schema(by_alias=True)` exposes only the first choice (`id`) — schema stays clean
+- `model_validate()` accepts both `id` and `item_id` as input
+- `model_dump_one_level()` uses the field name (`id`) since `validation_alias` doesn't set `alias`, so the function receives the correct parameter name
+
+Currently used on: `edit_item(id=...)`, `remove_item(id=...)`.
+
 ### Testing OmniJS-Based Tools
 
 When mocking OmniJS execution in tests, patch at the response module:

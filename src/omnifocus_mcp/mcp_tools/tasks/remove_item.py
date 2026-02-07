@@ -5,6 +5,9 @@ This preserves data and allows recovery if needed.
 """
 
 import asyncio
+from typing import Annotated
+
+from pydantic import AliasChoices, Field
 
 from ...applescript_builder import generate_find_clause
 from .status_helper import change_task_status
@@ -12,7 +15,7 @@ from .status_helper import change_task_status
 
 async def remove_item(
     name: str = "",
-    id: str | None = None,
+    id: Annotated[str | None, Field(validation_alias=AliasChoices("id", "item_id"))] = None,
     item_type: str = "task",
 ) -> str:
     """
