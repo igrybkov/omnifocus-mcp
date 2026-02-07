@@ -9,6 +9,7 @@ from ...applescript_builder import (
 )
 from ...utils import escape_applescript_string
 from ..reorder.move_helper import move_task_to_parent, move_task_to_position
+from .status_helper import change_task_status
 
 
 async def edit_item(
@@ -123,21 +124,15 @@ async def edit_item(
             changes.append("planned date")
 
         # Handle task-specific properties
+        effective_status = None  # Will be set if task status change is needed
         if item_type == "task":
-            # Handle status (new_status takes precedence over mark_complete)
+            # Determine effective status change (new_status takes precedence over mark_complete)
+            # Status is handled via OmniJS post-edit (works for all task types including inbox)
             if new_status is not None:
-                if new_status == "completed":
-                    modifications.append(f"set completed of {item_var} to true")
-                    changes.append("status (completed)")
-                elif new_status == "dropped":
-                    modifications.append(f"set dropped of {item_var} to true")
-                    changes.append("status (dropped)")
-                elif new_status == "incomplete":
-                    modifications.append(f"set completed of {item_var} to false")
-                    modifications.append(f"set dropped of {item_var} to false")
-                    changes.append("status (incomplete)")
+                effective_status = new_status
+                changes.append(f"status ({new_status})")
             elif mark_complete:
-                modifications.append(f"set completed of {item_var} to true")
+                effective_status = "completed"
                 changes.append("completed")
 
             # Handle tags
@@ -194,8 +189,10 @@ move {item_var} to end of projects of targetFolder''')
         # Build result message
         changes_str = ", ".join(changes) if changes else "no changes"
 
-        # Check if we need post-edit operations (parent change or position change)
-        needs_task_id = item_type == "task" and (new_parent_id is not None or new_position)
+        # Check if we need post-edit operations (status, parent, or position change)
+        needs_task_id = item_type == "task" and (
+            effective_status is not None or new_parent_id is not None or new_position
+        )
 
         # For tasks with parent/position change, we need the task ID
         if needs_task_id:
@@ -241,7 +238,13 @@ return "{result_msg}"
             task_id = output  # The script returned the task ID
             result_msg = f"Task updated successfully. Changed: {changes_str}"
 
-            # Handle parent change first (if specified)
+            # Handle status change via OmniJS (works for all task types including inbox)
+            if effective_status is not None:
+                success, status_msg = await change_task_status(task_id, effective_status)
+                if not success:
+                    result_msg += f" (status change failed: {status_msg})"
+
+            # Handle parent change (if specified)
             if new_parent_id is not None:
                 success, parent_msg = await move_task_to_parent(task_id, new_parent_id)
                 if success:

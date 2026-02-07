@@ -7,6 +7,7 @@ This preserves data and allows recovery if needed.
 import asyncio
 
 from ...applescript_builder import generate_find_clause
+from .status_helper import change_task_status
 
 
 async def remove_item(
@@ -33,43 +34,70 @@ async def remove_item(
         if not id and not name:
             return "Error: Either 'id' or 'name' must be provided"
 
-        # Build the find clause
-        find_clause = generate_find_clause(item_type, "theItem", id, name)
-
         # Build result message
         if id:
             result_msg = f"{item_type.capitalize()} dropped successfully (by ID)"
         else:
             result_msg = f"{item_type.capitalize()} dropped successfully: {name}"
 
-        # Drop items instead of deleting - different syntax for tasks vs projects
+        # Projects: use AppleScript (no inbox issue for projects)
         if item_type == "project":
-            drop_statement = "set status of theItem to dropped status"
-        else:
-            drop_statement = "set dropped of theItem to true"
-
-        script = f'''
+            find_clause = generate_find_clause(item_type, "theItem", id, name)
+            script = f'''
 tell application "OmniFocus"
     tell default document
         {find_clause}
-        {drop_statement}
+        set status of theItem to dropped status
     end tell
 end tell
 return "{result_msg}"
 '''
+            proc = await asyncio.create_subprocess_exec(
+                "osascript",
+                "-e",
+                script,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await proc.communicate()
 
-        proc = await asyncio.create_subprocess_exec(
-            "osascript",
-            "-e",
-            script,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        stdout, stderr = await proc.communicate()
+            if proc.returncode != 0:
+                return f"Error: {stderr.decode()}"
 
-        if proc.returncode != 0:
-            return f"Error: {stderr.decode()}"
+            return stdout.decode().strip()
 
-        return stdout.decode().strip()
+        # Tasks: use OmniJS (handles inbox tasks correctly)
+        task_id = id
+        if not task_id:
+            # Resolve name to ID via AppleScript
+            find_clause = generate_find_clause(item_type, "theItem", id, name)
+            script = f"""
+tell application "OmniFocus"
+    tell default document
+        {find_clause}
+        return id of theItem
+    end tell
+end tell
+"""
+            proc = await asyncio.create_subprocess_exec(
+                "osascript",
+                "-e",
+                script,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await proc.communicate()
+
+            if proc.returncode != 0:
+                return f"Error: {stderr.decode()}"
+
+            task_id = stdout.decode().strip()
+
+        success, msg = await change_task_status(task_id, "dropped")
+        if success:
+            return result_msg
+        else:
+            return f"Error: {msg}"
+
     except Exception as e:
         return f"Error removing {item_type}: {str(e)}"
