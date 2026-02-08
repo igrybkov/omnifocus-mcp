@@ -3,6 +3,7 @@
 from typing import Any
 
 from ...dates import preprocess_date_filters
+from ...validation import validate_filters
 from ..response import omnijs_json_response
 
 # Shared JS modules for browse script
@@ -44,8 +45,10 @@ async def browse(
             - flagged: Filter by flagged status (boolean)
             - sequential: Filter by sequential setting (boolean)
             - tags: Filter by tag names (list, OR logic - project has ANY of the tags)
-            - due_within: Projects due within N days from today. Supports natural language:
-                "next 3 days", "this week", "tomorrow", or numeric days
+            - due_within: Projects due within N days from today (positive) or overdue by up to N days
+                (negative). Supports natural language. Use negative for overdue: -7 = "overdue by up to 7 days"
+            - due_after: Projects due on or after this date. Supports natural language like due_within
+            - due_before: Projects due on or before this date. Supports natural language like due_within
             - deferred_until: Projects deferred becoming available within N days.
                 Supports natural language like due_within
             - deferred_on: Projects where defer date equals specific date.
@@ -63,7 +66,10 @@ async def browse(
             - flagged: Filter by flagged status (boolean)
             - tags: Filter by tag names (list, OR logic)
             - status: Filter by task status (list, OR logic)
-            - due_within: Tasks due within N days from today. Supports natural language
+            - due_within: Tasks due within N days from today (positive) or overdue by up to N days (negative).
+                Supports natural language
+            - due_after: Tasks due on or after this date. Supports natural language
+            - due_before: Tasks due on or before this date. Supports natural language
             - deferred_on: Tasks where defer date equals specific date. Supports natural language
             - planned_within: Tasks planned within N days from today. Supports natural language
             - modified_before: Tasks NOT modified in the last N days. Supports natural language
@@ -102,6 +108,12 @@ async def browse(
             "taskCount": 42
         }
     """
+    # Validate filter keys
+    if filters:
+        validate_filters(filters, "projects")
+    if task_filters:
+        validate_filters(task_filters, "tasks")
+
     # Preprocess date filters to convert natural language to numeric days
     processed_filters = preprocess_date_filters(filters or {})
     processed_task_filters = preprocess_date_filters(task_filters or {})

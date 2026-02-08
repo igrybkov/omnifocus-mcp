@@ -45,6 +45,8 @@ def parse_natural_date(value: str) -> datetime | None:
 # Filters that expect N days from now (or days ago for completed_within/modified_before)
 _DAYS_FILTERS = (
     "due_within",
+    "due_after",
+    "due_before",
     "deferred_until",
     "planned_within",
     "deferred_on",

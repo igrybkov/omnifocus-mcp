@@ -3,6 +3,7 @@
 from typing import Any
 
 from ...dates import preprocess_date_filters
+from ...validation import validate_filters
 from ..response import omnijs_json_response
 
 # Shared JS modules for search script
@@ -41,8 +42,11 @@ async def search(
             - tags: Filter by tag names (exact match, OR logic between tags)
             - status: Filter by status (OR logic)
             - flagged: Filter by flagged status
-            - due_within: Items due within N days from today. Supports natural language:
-                "next 3 days", "this week", "tomorrow", or numeric days
+            - due_within: Items due within N days from today (positive) or overdue by up to N days
+                (negative). Supports natural language: "next 3 days", "this week", "tomorrow",
+                or numeric days. Use negative for overdue: -7 means "overdue by up to 7 days"
+            - due_after: Items due on or after this date. Supports natural language like due_within
+            - due_before: Items due on or before this date. Supports natural language like due_within
             - deferred_until: Items deferred becoming available within N days.
                 Supports natural language like due_within
             - deferred_on: Items where defer date equals specific date. Useful for
@@ -84,6 +88,10 @@ async def search(
         When group_by is used, returns: {"entity": "...", "groupedBy": "...", "groups": [...]}
         When group_by is None, returns: {"count": N, "entity": "...", "items": [...]}
     """
+    # Validate filter keys
+    if filters:
+        validate_filters(filters, entity)
+
     # Preprocess date filters to convert natural language to numeric days
     processed_filters = preprocess_date_filters(filters or {})
 

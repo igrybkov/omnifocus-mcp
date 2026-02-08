@@ -14,15 +14,30 @@ function isWithinDays(date, days, requirePastOrPresent) {
         return false;
     }
     var now = new Date();
-    var futureDate = new Date();
-    futureDate.setDate(futureDate.getDate() + days);
 
-    if (date > futureDate) {
-        return false;
+    if (days >= 0) {
+        // Positive: due in the next N days
+        var futureDate = new Date();
+        futureDate.setDate(futureDate.getDate() + days);
+        if (date > futureDate) {
+            return false;
+        }
+        if (requirePastOrPresent && date < now) {
+            return false;
+        }
+    } else {
+        // Negative: overdue by up to N days
+        var pastDate = new Date();
+        pastDate.setDate(pastDate.getDate() + days);  // days is negative
+        // Date must be in the past (< now) and not too far back (>= pastDate)
+        if (date >= now) {
+            return false;
+        }
+        if (date < pastDate) {
+            return false;
+        }
     }
-    if (requirePastOrPresent && date < now) {
-        return false;
-    }
+
     return true;
 }
 
@@ -61,6 +76,47 @@ function ensureArray(value) {
 }
 
 /**
+ * Validate filter keys against allowed sets.
+ * @param {Object} filters - Filter object to validate
+ * @param {Array<string>} allowedKeys - List of valid filter keys
+ * @param {string} entityType - Type being filtered ('tasks', 'projects', 'folders')
+ * @throws {Error} If unknown filter keys are found
+ */
+function validateFilters(filters, allowedKeys, entityType) {
+    var filterKeys = Object.keys(filters);
+    var unknownKeys = [];
+
+    for (var i = 0; i < filterKeys.length; i++) {
+        if (allowedKeys.indexOf(filterKeys[i]) === -1) {
+            unknownKeys.push(filterKeys[i]);
+        }
+    }
+
+    if (unknownKeys.length > 0) {
+        throw new Error(
+            "Unknown filter key(s) for " + entityType + ": " + unknownKeys.join(", ") + ". " +
+            "Valid keys: " + allowedKeys.join(", ")
+        );
+    }
+}
+
+// Valid filter keys for each entity type
+var TASK_FILTER_KEYS = [
+    "item_ids", "project_id", "project_name", "flagged", "tags", "status",
+    "due_within", "due_after", "due_before",
+    "deferred_until", "deferred_on", "planned_within",
+    "has_note", "completed_within", "completed_after", "completed_before",
+    "modified_before"
+];
+
+var PROJECT_FILTER_KEYS = [
+    "item_ids", "folder_id", "status", "available", "flagged", "sequential", "tags",
+    "due_within", "due_after", "due_before",
+    "deferred_until", "deferred_on",
+    "has_note", "modified_before", "was_deferred", "stalled"
+];
+
+/**
  * Create a filter function for tasks.
  * @param {Object} filters - Filter criteria
  * @param {Object} options - Additional options
@@ -69,6 +125,9 @@ function ensureArray(value) {
  */
 function createTaskFilter(filters, options) {
     var includeCompleted = options.includeCompleted || false;
+
+    // Validate filter keys
+    validateFilters(filters, TASK_FILTER_KEYS, "tasks");
 
     // Normalize array-type filters (callers may pass strings instead of arrays)
     filters.status = ensureArray(filters.status);
@@ -138,6 +197,36 @@ function createTaskFilter(filters, options) {
         // Filter by due_within N days
         if (filters.due_within !== undefined) {
             if (!isWithinDays(task.dueDate, filters.due_within, true)) {
+                return false;
+            }
+        }
+
+        // Filter by due_after (tasks due on or after this date)
+        // Value is days from today (negative for past dates)
+        if (filters.due_after !== undefined) {
+            if (!task.dueDate) {
+                return false;
+            }
+            var afterDate = new Date();
+            afterDate.setDate(afterDate.getDate() + filters.due_after);
+            // Start of that day
+            afterDate = new Date(afterDate.getFullYear(), afterDate.getMonth(), afterDate.getDate());
+            if (task.dueDate < afterDate) {
+                return false;
+            }
+        }
+
+        // Filter by due_before (tasks due before the end of this date)
+        // Value is days from today (negative for past dates)
+        if (filters.due_before !== undefined) {
+            if (!task.dueDate) {
+                return false;
+            }
+            var beforeDate = new Date();
+            beforeDate.setDate(beforeDate.getDate() + filters.due_before);
+            // End of that day (midnight next day)
+            beforeDate = new Date(beforeDate.getFullYear(), beforeDate.getMonth(), beforeDate.getDate() + 1);
+            if (task.dueDate >= beforeDate) {
                 return false;
             }
         }
@@ -237,6 +326,9 @@ function createTaskFilter(filters, options) {
 function createProjectFilter(filters, options) {
     var includeCompleted = options.includeCompleted || false;
 
+    // Validate filter keys
+    validateFilters(filters, PROJECT_FILTER_KEYS, "projects");
+
     // Normalize array-type filters (callers may pass strings instead of arrays)
     filters.status = ensureArray(filters.status);
     filters.tags = ensureArray(filters.tags);
@@ -309,6 +401,36 @@ function createProjectFilter(filters, options) {
         // Filter by due_within N days
         if (filters.due_within !== undefined) {
             if (!isWithinDays(project.dueDate, filters.due_within, true)) {
+                return false;
+            }
+        }
+
+        // Filter by due_after (projects due on or after this date)
+        // Value is days from today (negative for past dates)
+        if (filters.due_after !== undefined) {
+            if (!project.dueDate) {
+                return false;
+            }
+            var afterDate = new Date();
+            afterDate.setDate(afterDate.getDate() + filters.due_after);
+            // Start of that day
+            afterDate = new Date(afterDate.getFullYear(), afterDate.getMonth(), afterDate.getDate());
+            if (project.dueDate < afterDate) {
+                return false;
+            }
+        }
+
+        // Filter by due_before (projects due before the end of this date)
+        // Value is days from today (negative for past dates)
+        if (filters.due_before !== undefined) {
+            if (!project.dueDate) {
+                return false;
+            }
+            var beforeDate = new Date();
+            beforeDate.setDate(beforeDate.getDate() + filters.due_before);
+            // End of that day (midnight next day)
+            beforeDate = new Date(beforeDate.getFullYear(), beforeDate.getMonth(), beforeDate.getDate() + 1);
+            if (project.dueDate >= beforeDate) {
                 return false;
             }
         }

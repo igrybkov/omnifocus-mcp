@@ -673,3 +673,106 @@ class TestSearch:
 
             script_name, params, *_ = mock_exec.call_args[0]
             assert params["include_completed"] is True
+
+    # due_after / due_before tests
+    @pytest.mark.asyncio
+    async def test_search_with_due_after_filter(self):
+        """Test search with due_after filter."""
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
+            mock_exec.return_value = {"count": 0, "entity": "tasks", "items": []}
+
+            await search(entity="tasks", filters={"due_after": "2026-02-10"})
+
+            script_name, params, *_ = mock_exec.call_args[0]
+            assert params["filters"]["due_after"] == 2  # 2 days from today (Feb 8)
+
+    @pytest.mark.asyncio
+    async def test_search_with_due_before_filter(self):
+        """Test search with due_before filter (for overdue tasks)."""
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
+            mock_exec.return_value = {"count": 0, "entity": "tasks", "items": []}
+
+            await search(entity="tasks", filters={"due_before": "today"})
+
+            script_name, params, *_ = mock_exec.call_args[0]
+            assert params["filters"]["due_before"] == 0  # today
+
+    @pytest.mark.asyncio
+    async def test_search_with_due_after_and_before_range(self):
+        """Test search with both due_after and due_before for a date range."""
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
+            mock_exec.return_value = {"count": 0, "entity": "tasks", "items": []}
+
+            await search(
+                entity="tasks",
+                filters={"due_after": "2026-02-05", "due_before": "2026-02-12"},
+            )
+
+            script_name, params, *_ = mock_exec.call_args[0]
+            assert params["filters"]["due_after"] == -3  # 3 days ago
+            assert params["filters"]["due_before"] == 4  # 4 days from today
+
+    @pytest.mark.asyncio
+    async def test_search_with_due_within_negative_for_overdue(self):
+        """Test search with due_within negative value for overdue tasks."""
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
+            mock_exec.return_value = {"count": 0, "entity": "tasks", "items": []}
+
+            # -7 means "overdue by up to 7 days"
+            await search(entity="tasks", filters={"due_within": -7})
+
+            script_name, params, *_ = mock_exec.call_args[0]
+            assert params["filters"]["due_within"] == -7
+
+    # Filter validation tests
+    @pytest.mark.asyncio
+    async def test_search_rejects_unknown_filter_keys(self):
+        """Test that unknown filter keys raise ValueError."""
+        with pytest.raises(ValueError) as exc_info:
+            await search(entity="tasks", filters={"unknown_key": "value"})
+
+        assert "Unknown filter key(s)" in str(exc_info.value)
+        assert "unknown_key" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_search_rejects_typo_in_filter_key(self):
+        """Test that typos in filter keys are caught."""
+        with pytest.raises(ValueError) as exc_info:
+            await search(entity="tasks", filters={"due_befor": "today"})  # typo
+
+        assert "Unknown filter key(s)" in str(exc_info.value)
+        assert "due_befor" in str(exc_info.value)
+        assert "due_before" in str(exc_info.value)  # Should suggest valid keys
+
+    @pytest.mark.asyncio
+    async def test_search_allows_all_valid_task_filters(self):
+        """Test that all valid task filter keys are accepted."""
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
+            mock_exec.return_value = {"count": 0, "entity": "tasks", "items": []}
+
+            # This should not raise
+            await search(
+                entity="tasks",
+                filters={
+                    "item_ids": ["id1"],
+                    "project_id": "proj1",
+                    "project_name": "Test",
+                    "flagged": True,
+                    "tags": ["Work"],
+                    "status": ["Available"],
+                    "due_within": 7,
+                    "due_after": -7,
+                    "due_before": 0,
+                    "deferred_until": 3,
+                    "deferred_on": 0,
+                    "planned_within": 7,
+                    "has_note": True,
+                    "completed_within": 7,
+                    "completed_after": -7,
+                    "completed_before": 0,
+                    "modified_before": 21,
+                },
+            )
+
+            # Should succeed without raising
+            assert mock_exec.called
