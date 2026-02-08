@@ -80,7 +80,6 @@ indent-style = "space"
 commit_parser = "conventional"
 allow_zero_version = true
 tag_format = "v{version}"
-build_command = "uv build"
 version_variables = [
     "src/omnifocus_mcp/__init__.py:__version__",
 ]
