@@ -67,6 +67,13 @@ function createTaskFilter(filters, options) {
             }
         }
 
+        // Filter by item_ids (OR logic - task ID matches any in the list)
+        if (filters.item_ids !== undefined && filters.item_ids.length > 0) {
+            if (filters.item_ids.indexOf(task.id.primaryKey) === -1) {
+                return false;
+            }
+        }
+
         // Filter by project_id
         if (filters.project_id !== undefined) {
             if (!task.containingProject || task.containingProject.id.primaryKey !== filters.project_id) {
@@ -188,6 +195,13 @@ function createProjectFilter(filters, options) {
         if (!includeCompleted) {
             if (project.status === Project.Status.Done ||
                 project.status === Project.Status.Dropped) {
+                return false;
+            }
+        }
+
+        // Filter by item_ids (OR logic - project ID matches any in the list)
+        if (filters.item_ids !== undefined && filters.item_ids.length > 0) {
+            if (filters.item_ids.indexOf(project.id.primaryKey) === -1) {
                 return false;
             }
         }

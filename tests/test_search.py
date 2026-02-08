@@ -71,6 +71,29 @@ class TestSearch:
             assert result_data["entity"] == "folders"
 
     @pytest.mark.asyncio
+    async def test_search_with_item_ids_filter(self):
+        """Test search with item_ids filter to fetch specific items by ID."""
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
+            mock_exec.return_value = {
+                "count": 2,
+                "entity": "tasks",
+                "items": [
+                    {"id": "task1", "name": "Task 1", "note": "Note 1"},
+                    {"id": "task3", "name": "Task 3", "note": "Note 3"},
+                ],
+            }
+
+            await search(
+                entity="tasks",
+                filters={"item_ids": ["task1", "task3"]},
+                fields=["id", "name", "note"],
+            )
+
+            script_name, params, *_ = mock_exec.call_args[0]
+            assert params["filters"]["item_ids"] == ["task1", "task3"]
+            assert params["fields"] == ["id", "name", "note"]
+
+    @pytest.mark.asyncio
     async def test_search_with_flagged_filter(self):
         """Test search with flagged filter."""
         with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:

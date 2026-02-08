@@ -38,6 +38,7 @@ async def browse(
         parent_name: Start traversal from folder with this name (optional, case-insensitive,
             supports partial matching - e.g. "Goals" matches "🎯 Goals")
         filters: Optional filters for projects (all AND logic):
+            - item_ids: Filter by a list of project IDs (OR logic)
             - status: Filter by project status (list, OR logic).
                       Values: 'Active', 'Done', 'Dropped', 'OnHold'
             - flagged: Filter by flagged status (boolean)
@@ -58,6 +59,7 @@ async def browse(
             - has_note: Filter by note presence (boolean)
             - available: Filter to Active projects that are not deferred (boolean)
         task_filters: Optional filters for tasks when include_tasks=True (all AND logic):
+            - item_ids: Filter by a list of task IDs (OR logic)
             - flagged: Filter by flagged status (boolean)
             - tags: Filter by tag names (list, OR logic)
             - status: Filter by task status (list, OR logic)

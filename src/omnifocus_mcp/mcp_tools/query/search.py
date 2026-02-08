@@ -33,6 +33,8 @@ async def search(
     Args:
         entity: Type to query: 'tasks', 'projects', or 'folders'
         filters: Optional filters (all AND logic):
+            - item_ids: Filter by a list of item IDs (OR logic). Works for tasks and projects.
+                Useful for retrieving specific items (e.g., notes) by their IDs.
             - project_id: Filter tasks by exact project ID
             - project_name: Filter tasks by project name (case-insensitive partial match)
             - folder_id: Filter projects by exact folder ID
