@@ -75,3 +75,32 @@ ignore = [
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[tool.semantic_release]
+commit_parser = "conventional"
+allow_zero_version = true
+tag_format = "v{version}"
+build_command = "uv build"
+version_variables = [
+    "src/omnifocus_mcp/__init__.py:__version__",
+]
+commit_message = "chore(release): v{version} [skip ci]"
+
+[tool.semantic_release.changelog]
+mode = "update"
+exclude_commit_patterns = [
+    '''Merge pull request.*''',
+    '''chore\(deps\):.*''',
+]
+
+[tool.semantic_release.changelog.default_templates]
+changelog_file = "CHANGELOG.md"
+output_format = "md"
+mask_initial_release = false
+
+[tool.semantic_release.remote]
+type = "github"
+
+[tool.semantic_release.publish]
+upload_to_vcs_release = true
+dist_glob_patterns = ["dist/*"]
