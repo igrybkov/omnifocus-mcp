@@ -615,3 +615,61 @@ class TestSearch:
             assert folder_groups[0]["goal_count"] == 0
             assert folder_groups[1]["stuck_count"] == 1
             assert folder_groups[1]["goal_count"] == 8
+
+    # completed_after / completed_before tests
+    @pytest.mark.asyncio
+    async def test_search_with_completed_after_filter(self):
+        """Test search with completed_after filter."""
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
+            mock_exec.return_value = {"count": 0, "entity": "tasks", "items": []}
+
+            await search(entity="tasks", filters={"completed_after": "2026-02-02"})
+
+            script_name, params, *_ = mock_exec.call_args[0]
+            assert params["filters"]["completed_after"] == -6  # 6 days ago
+            # Should auto-enable include_completed
+            assert params["include_completed"] is True
+
+    @pytest.mark.asyncio
+    async def test_search_with_completed_before_filter(self):
+        """Test search with completed_before filter."""
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
+            mock_exec.return_value = {"count": 0, "entity": "tasks", "items": []}
+
+            await search(entity="tasks", filters={"completed_before": "today"})
+
+            script_name, params, *_ = mock_exec.call_args[0]
+            assert params["filters"]["completed_before"] == 0  # today
+            assert params["include_completed"] is True
+
+    @pytest.mark.asyncio
+    async def test_search_with_completed_after_and_before_range(self):
+        """Test search with both completed_after and completed_before for a date range."""
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
+            mock_exec.return_value = {"count": 0, "entity": "tasks", "items": []}
+
+            await search(
+                entity="tasks",
+                filters={"completed_after": "2026-02-02", "completed_before": "2026-02-08"},
+            )
+
+            script_name, params, *_ = mock_exec.call_args[0]
+            assert params["filters"]["completed_after"] == -6
+            assert params["filters"]["completed_before"] == 0
+            assert params["include_completed"] is True
+
+    @pytest.mark.asyncio
+    async def test_search_completed_after_auto_enables_include_completed(self):
+        """Test that completed_after auto-enables include_completed even if not explicitly set."""
+        with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
+            mock_exec.return_value = {"count": 0, "entity": "tasks", "items": []}
+
+            # Explicitly pass include_completed=False; it should be overridden
+            await search(
+                entity="tasks",
+                filters={"completed_after": -7},
+                include_completed=False,
+            )
+
+            script_name, params, *_ = mock_exec.call_args[0]
+            assert params["include_completed"] is True

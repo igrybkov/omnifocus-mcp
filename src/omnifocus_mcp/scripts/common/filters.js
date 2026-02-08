@@ -49,6 +49,18 @@ function isOnDay(date, daysFromToday) {
 }
 
 /**
+ * Ensure a value is an array. Wraps strings/scalars in an array.
+ * Returns undefined for null/undefined so filter guards can skip them.
+ * @param {*} value - The value to coerce
+ * @returns {Array|undefined} The value as an array, or undefined
+ */
+function ensureArray(value) {
+    if (value === undefined || value === null) return undefined;
+    if (Array.isArray(value)) return value;
+    return [value];
+}
+
+/**
  * Create a filter function for tasks.
  * @param {Object} filters - Filter criteria
  * @param {Object} options - Additional options
@@ -57,6 +69,11 @@ function isOnDay(date, daysFromToday) {
  */
 function createTaskFilter(filters, options) {
     var includeCompleted = options.includeCompleted || false;
+
+    // Normalize array-type filters (callers may pass strings instead of arrays)
+    filters.status = ensureArray(filters.status);
+    filters.tags = ensureArray(filters.tags);
+    filters.item_ids = ensureArray(filters.item_ids);
 
     return function(task) {
         // Completed/dropped filter
@@ -166,6 +183,36 @@ function createTaskFilter(filters, options) {
             }
         }
 
+        // Filter by completed_after (tasks completed on or after this date)
+        // Value is days from today (negative for past dates)
+        if (filters.completed_after !== undefined) {
+            if (!task.completionDate) {
+                return false;
+            }
+            var afterDate = new Date();
+            afterDate.setDate(afterDate.getDate() + filters.completed_after);
+            // Start of that day
+            afterDate = new Date(afterDate.getFullYear(), afterDate.getMonth(), afterDate.getDate());
+            if (task.completionDate < afterDate) {
+                return false;
+            }
+        }
+
+        // Filter by completed_before (tasks completed before the end of this date)
+        // Value is days from today (negative for past dates)
+        if (filters.completed_before !== undefined) {
+            if (!task.completionDate) {
+                return false;
+            }
+            var beforeDate = new Date();
+            beforeDate.setDate(beforeDate.getDate() + filters.completed_before);
+            // End of that day (midnight next day)
+            beforeDate = new Date(beforeDate.getFullYear(), beforeDate.getMonth(), beforeDate.getDate() + 1);
+            if (task.completionDate >= beforeDate) {
+                return false;
+            }
+        }
+
         // Filter by modified_before N days (tasks NOT modified in last N days)
         if (filters.modified_before !== undefined) {
             var modCutoff = new Date();
@@ -189,6 +236,11 @@ function createTaskFilter(filters, options) {
  */
 function createProjectFilter(filters, options) {
     var includeCompleted = options.includeCompleted || false;
+
+    // Normalize array-type filters (callers may pass strings instead of arrays)
+    filters.status = ensureArray(filters.status);
+    filters.tags = ensureArray(filters.tags);
+    filters.item_ids = ensureArray(filters.item_ids);
 
     return function(project) {
         // Completed/dropped filter

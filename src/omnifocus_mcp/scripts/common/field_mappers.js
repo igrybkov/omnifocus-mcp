@@ -30,6 +30,73 @@ function getFolderPath(item) {
 }
 
 /**
+ * Resolve a derived field name on a raw OmniFocus object.
+ * Used by aggregation/grouping to access mapped field values without
+ * running full mapTaskFields/mapProjectFields.
+ * @param {Object} item - Raw OmniFocus task/project/folder object
+ * @param {string} fieldName - The field name (may be a derived/mapped name)
+ * @param {string} entityType - 'tasks', 'projects', or 'folders'
+ * @returns {*} The resolved value
+ */
+function getGroupKey(item, fieldName, entityType) {
+    if (entityType === "tasks") {
+        switch (fieldName) {
+            case "projectName":
+                return item.containingProject ? item.containingProject.name : "Inbox";
+            case "projectId":
+                return item.containingProject ? item.containingProject.id.primaryKey : null;
+            case "tagNames":
+                return item.tags && item.tags.length > 0
+                    ? item.tags.map(function(t) { return t.name; }).join(", ")
+                    : null;
+            case "taskStatus":
+                return taskStatusMap[item.taskStatus] || "Unknown";
+            case "completionDate":
+                return item.completionDate ? item.completionDate.toISOString() : null;
+            case "folderPath":
+                var fp = getFolderPath(item);
+                return fp.length > 0 ? fp.join(" / ") : null;
+            case "id":
+                return item.id.primaryKey;
+        }
+    }
+
+    if (entityType === "projects") {
+        switch (fieldName) {
+            case "folderName":
+                return item.folder ? item.folder.name : null;
+            case "folderId":
+                return item.folder ? item.folder.id.primaryKey : null;
+            case "status":
+                return projectStatusMap[item.status] || "Unknown";
+            case "tagNames":
+                return item.tags && item.tags.length > 0
+                    ? item.tags.map(function(t) { return t.name; }).join(", ")
+                    : null;
+            case "folderPath":
+                var fp = getFolderPath(item);
+                return fp.length > 0 ? fp.join(" / ") : null;
+            case "id":
+                return item.id.primaryKey;
+        }
+    }
+
+    if (entityType === "folders") {
+        switch (fieldName) {
+            case "id":
+                return item.id.primaryKey;
+        }
+    }
+
+    // Fall back to direct property access
+    var val = item[fieldName];
+    if (val instanceof Date) {
+        return val.toISOString();
+    }
+    return val;
+}
+
+/**
  * Map task fields to output format.
  * @param {Object} task - OmniFocus task object
  * @param {Array<string>} fields - Fields to include (empty = all)

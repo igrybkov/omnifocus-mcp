@@ -49,6 +49,8 @@ _DAYS_FILTERS = (
     "planned_within",
     "deferred_on",
     "completed_within",
+    "completed_after",
+    "completed_before",
     "modified_before",
 )
 

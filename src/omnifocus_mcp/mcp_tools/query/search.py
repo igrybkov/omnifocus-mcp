@@ -51,6 +51,10 @@ async def search(
                 Supports natural language like due_within
             - completed_within: Tasks completed within the last N days. Automatically
                 enables include_completed. Supports natural language like due_within
+            - completed_after: Tasks completed on or after this date. Automatically
+                enables include_completed. Supports natural language like due_within
+            - completed_before: Tasks completed on or before this date. Automatically
+                enables include_completed. Supports natural language like due_within
             - modified_before: Items NOT modified in the last N days. Useful for
                 finding stale items. Supports natural language like due_within
             - was_deferred: For projects, filter to Active projects that had a defer
@@ -83,8 +87,11 @@ async def search(
     # Preprocess date filters to convert natural language to numeric days
     processed_filters = preprocess_date_filters(filters or {})
 
-    # Auto-enable include_completed when completed_within is used
-    if "completed_within" in processed_filters:
+    # Auto-enable include_completed when completion date filters are used
+    if any(
+        key in processed_filters
+        for key in ("completed_within", "completed_after", "completed_before")
+    ):
         include_completed = True
 
     return await omnijs_json_response(

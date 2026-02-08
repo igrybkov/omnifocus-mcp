@@ -168,17 +168,11 @@ try {
         var groups = {};
         for (var i = 0; i < items.length; i++) {
             var item = items[i];
-            var groupKey = item[groupBy];
+            var groupKey = getGroupKey(item, groupBy, entityType);
 
             // Handle null/undefined grouping keys
             if (groupKey === null || groupKey === undefined) {
                 groupKey = "(none)";
-            } else if (groupBy === "status" && entityType === "projects") {
-                // Map project status enum to string
-                groupKey = projectStatusMap[groupKey] || String(groupKey);
-            } else if (groupBy === "taskStatus" && entityType === "tasks") {
-                // Map task status enum to string
-                groupKey = taskStatusMap[groupKey] || String(groupKey);
             } else {
                 // Convert to string for consistent grouping
                 groupKey = String(groupKey);
