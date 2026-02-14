@@ -23,12 +23,12 @@ jobs:
       contents: write
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ github.ref_name }}
           fetch-depth: 0
       - run: git reset --hard ${{ github.event.workflow_run.head_sha }}
-      - uses: astral-sh/setup-uv@v4
+      - uses: astral-sh/setup-uv@v7
       - run: uv python install 3.12
       - id: release
         uses: python-semantic-release/python-semantic-release@v10.5.3
