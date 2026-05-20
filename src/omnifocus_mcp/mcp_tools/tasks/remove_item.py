@@ -50,7 +50,7 @@ async def remove_item(
 tell application "OmniFocus"
     tell default document
         {find_clause}
-        set status of theItem to dropped status
+        tell theItem to mark dropped
     end tell
 end tell
 return "{result_msg}"

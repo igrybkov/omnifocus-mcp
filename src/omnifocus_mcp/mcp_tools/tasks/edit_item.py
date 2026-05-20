@@ -158,16 +158,16 @@ async def edit_item(
                     modifications.append(f"set status of {item_var} to active status")
                     changes.append("status (active)")
                 elif new_project_status == "completed":
-                    modifications.append(f"set completed of {item_var} to true")
+                    modifications.append(f"tell {item_var} to mark complete")
                     changes.append("status (completed)")
                 elif new_project_status == "dropped":
-                    modifications.append(f"set status of {item_var} to dropped status")
+                    modifications.append(f"tell {item_var} to mark dropped")
                     changes.append("status (dropped)")
                 elif new_project_status == "onHold":
                     modifications.append(f"set status of {item_var} to on hold status")
                     changes.append("status (on hold)")
             elif mark_complete:
-                modifications.append(f"set completed of {item_var} to true")
+                modifications.append(f"tell {item_var} to mark complete")
                 changes.append("completed")
 
             # Handle folder move
