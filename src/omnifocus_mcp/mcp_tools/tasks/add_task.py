@@ -3,6 +3,7 @@
 import asyncio
 
 from ...applescript_builder import process_date_params
+from ...markdown_notes import apply_note
 from ...tags import generate_add_tags_applescript
 from ...utils import escape_applescript_string
 from ..reorder.move_helper import move_task_to_position
@@ -28,7 +29,9 @@ async def add_omnifocus_task(
 
     Args:
         name: The name/title of the task
-        note: Optional note/description for the task
+        note: Optional note in Markdown. Bold, italic, inline code, links, headings,
+            and lists are converted to OmniFocus-native rich text. Notes are also
+            returned as Markdown when read.
         project: Optional project name to add the task to (adds to inbox if not specified)
         due_date: Optional due date in ISO format (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)
         defer_date: Optional defer date in ISO format
@@ -47,9 +50,9 @@ async def add_omnifocus_task(
         Success or error message
     """
     try:
-        # Escape all user inputs to prevent AppleScript injection
+        # Escape all user inputs to prevent AppleScript injection.
+        # The note is applied separately as rich text (Markdown) via OmniJS below.
         escaped_name = escape_applescript_string(name)
-        escaped_note = escape_applescript_string(note)
         escaped_project = escape_applescript_string(project)
         escaped_parent_id = escape_applescript_string(parent_task_id or "")
         escaped_parent_name = escape_applescript_string(parent_task_name or "")
@@ -74,10 +77,8 @@ async def add_omnifocus_task(
 
         properties_str = ", ".join(properties)
 
-        # Build post-creation assignments
+        # Build post-creation assignments (note is set later via OmniJS as rich text)
         post_creation = []
-        if escaped_note:
-            post_creation.append(f'set note of newTask to "{escaped_note}"')
         post_creation.extend(in_tell_assignments)
 
         # Add tags if specified
@@ -185,6 +186,12 @@ end tell
 
         task_id = stdout.decode().strip()
         result_msg = f"Task added successfully {location_msg}"
+
+        # Apply the note as rich text (Markdown -> OmniFocus native) via OmniJS
+        if note:
+            note_ok, note_msg = await apply_note(task_id, note)
+            if not note_ok:
+                result_msg += f" (note not set: {note_msg})"
 
         # Handle positioning if requested
         if position and can_reposition:

@@ -10,6 +10,7 @@ from ...applescript_builder import (
     generate_tag_modifications,
     process_date_params,
 )
+from ...markdown_notes import apply_note
 from ...utils import escape_applescript_string
 from ..reorder.move_helper import move_task_to_parent, move_task_to_position
 from .status_helper import change_task_status
@@ -45,7 +46,10 @@ async def edit_item(
         current_name: The current name of the task or project (used if id not provided)
         id: The ID of the task or project to edit (preferred)
         new_name: New name for the item (optional)
-        new_note: New note for the item (optional)
+        new_note: New note for the item in Markdown (optional). Bold, italic, inline
+            code, links, headings, and lists are converted to OmniFocus-native rich
+            text; notes are returned as Markdown when read. Empty string leaves the
+            note unchanged (there is currently no way to clear a note via this tool).
         mark_complete: Whether to mark the item as complete (deprecated, use new_status)
         item_type: Type of item to edit ("task" or "project")
         new_due_date: New due date in ISO format, empty string to clear (optional)
@@ -76,9 +80,9 @@ async def edit_item(
         if not id and not current_name:
             return "Error: Either 'id' or 'current_name' must be provided"
 
-        # Escape user inputs to prevent AppleScript injection
+        # Escape user inputs to prevent AppleScript injection.
+        # The note is applied separately as rich text (Markdown) via OmniJS below.
         escaped_new_name = escape_applescript_string(new_name)
-        escaped_new_note = escape_applescript_string(new_note)
         escaped_new_folder = escape_applescript_string(new_folder_name or "")
 
         # Determine item variable name
@@ -105,8 +109,10 @@ async def edit_item(
             modifications.append(f'set name of {item_var} to "{escaped_new_name}"')
             changes.append("name")
 
-        if escaped_new_note:
-            modifications.append(f'set note of {item_var} to "{escaped_new_note}"')
+        # Note is applied as rich text via OmniJS after the AppleScript edit.
+        # Empty string means "don't change" (consistent with current behavior).
+        needs_note_write = new_note != ""
+        if needs_note_write:
             changes.append("note")
 
         if new_flagged is not None:
@@ -196,9 +202,12 @@ move {item_var} to end of projects of targetFolder''')
         needs_task_id = item_type == "task" and (
             effective_status is not None or new_parent_id is not None or new_position
         )
+        # A note write (rich text via OmniJS) also needs the item ID, for tasks
+        # and projects alike.
+        needs_item_id = needs_task_id or needs_note_write
 
-        # For tasks with parent/position change, we need the task ID
-        if needs_task_id:
+        # When a post-edit step needs the item ID, return it from AppleScript
+        if needs_item_id:
             script = f"""
 {date_pre_script}
 tell application "OmniFocus"
@@ -236,39 +245,47 @@ return "{result_msg}"
 
         output = stdout.decode().strip()
 
-        # Handle post-edit operations for tasks
-        if needs_task_id:
-            task_id = output  # The script returned the task ID
-            result_msg = f"Task updated successfully. Changed: {changes_str}"
+        # Handle post-edit operations that require the item ID
+        if needs_item_id:
+            item_id_value = output  # The script returned the item ID
+            result_msg = f"{item_type.capitalize()} updated successfully. Changed: {changes_str}"
 
-            # Handle status change via OmniJS (works for all task types including inbox)
-            if effective_status is not None:
-                success, status_msg = await change_task_status(task_id, effective_status)
-                if not success:
-                    result_msg += f" (status change failed: {status_msg})"
+            # Task-only post-edit operations
+            if item_type == "task":
+                # Handle status change via OmniJS (works for all task types including inbox)
+                if effective_status is not None:
+                    success, status_msg = await change_task_status(item_id_value, effective_status)
+                    if not success:
+                        result_msg += f" (status change failed: {status_msg})"
 
-            # Handle parent change (if specified)
-            if new_parent_id is not None:
-                success, parent_msg = await move_task_to_parent(task_id, new_parent_id)
-                if success:
-                    if new_parent_id == "":
-                        result_msg += " (moved to project root)"
+                # Handle parent change (if specified)
+                if new_parent_id is not None:
+                    success, parent_msg = await move_task_to_parent(item_id_value, new_parent_id)
+                    if success:
+                        if new_parent_id == "":
+                            result_msg += " (moved to project root)"
+                        else:
+                            result_msg += " (moved to new parent)"
+                        changes.append("parent")
                     else:
-                        result_msg += " (moved to new parent)"
-                    changes.append("parent")
-                else:
-                    result_msg += f" (parent change failed: {parent_msg})"
+                        result_msg += f" (parent change failed: {parent_msg})"
 
-            # Handle position change (if specified)
-            if new_position:
-                success, move_msg = await move_task_to_position(
-                    task_id, new_position, position_reference_task_id
-                )
-                if success:
-                    result_msg += f" (repositioned to {new_position})"
-                    changes.append("position")
-                else:
-                    result_msg += f" (repositioning failed: {move_msg})"
+                # Handle position change (if specified)
+                if new_position:
+                    success, move_msg = await move_task_to_position(
+                        item_id_value, new_position, position_reference_task_id
+                    )
+                    if success:
+                        result_msg += f" (repositioned to {new_position})"
+                        changes.append("position")
+                    else:
+                        result_msg += f" (repositioning failed: {move_msg})"
+
+            # Apply the note as rich text (Markdown -> OmniFocus native) via OmniJS
+            if needs_note_write:
+                note_ok, note_msg = await apply_note(item_id_value, new_note)
+                if not note_ok:
+                    result_msg += f" (note not set: {note_msg})"
 
             return result_msg
 

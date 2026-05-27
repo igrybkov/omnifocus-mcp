@@ -7,6 +7,7 @@ A Python-based Model Context Protocol (MCP) server that enables AI assistants li
 ## Features
 
 - 🔧 **Comprehensive OmniFocus Integration**: Add, edit, remove, and query tasks and projects
+- 📝 **Markdown Notes**: Task/project notes are Markdown — bold, italic, inline code, links, headings, and lists are converted to OmniFocus-native rich text on write and back to Markdown on read, so edits round-trip without losing formatting or links
 - 🐍 **Official Python MCP SDK**: Built using the official MCP SDK
 - 🔌 **Stdin/Stdout Transport**: Standard MCP stdio protocol for seamless integration
 - ⚡ **UV Support**: Full support for UV package manager, including `uvx` for quick installation

@@ -3,7 +3,7 @@
 from ..response import omnijs_json_response
 
 # Shared JS modules for get_perspective_view script
-PERSPECTIVE_VIEW_INCLUDES = ["common/status_maps"]
+PERSPECTIVE_VIEW_INCLUDES = ["common/status_maps", "common/markdown_serializer"]
 
 
 async def get_perspective_view(

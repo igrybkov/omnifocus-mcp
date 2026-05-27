@@ -1,6 +1,6 @@
 // Field mapping functions for OmniFocus items
 // Shared between search.js and browse.js
-// Requires: status_maps.js to be loaded first
+// Requires: status_maps.js and markdown_serializer.js to be loaded first
 
 /**
  * Get the folder path for an item (task or project).
@@ -106,7 +106,7 @@ function mapTaskFields(task, fields) {
     var allFields = {
         id: task.id.primaryKey,
         name: task.name,
-        note: task.note || "",
+        note: noteToMarkdown(task),
         flagged: task.flagged || false,
         completed: task.completed || false,
         taskStatus: taskStatusMap[task.taskStatus] || "Unknown",
@@ -160,7 +160,7 @@ function mapProjectFields(project, fields) {
     var allFields = {
         id: project.id.primaryKey,
         name: project.name,
-        note: project.note || "",
+        note: noteToMarkdown(project),
         status: projectStatusMap[project.status] || "Unknown",
         sequential: project.sequential || false,
         flagged: project.flagged || false,

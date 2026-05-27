@@ -10,6 +10,7 @@ from ..response import omnijs_json_response
 BROWSE_INCLUDES = [
     "common/status_maps",
     "common/filters",
+    "common/markdown_serializer",
     "common/field_mappers",
 ]
 
