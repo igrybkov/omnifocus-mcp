@@ -2,6 +2,30 @@
 
 <!-- version list -->
 
+## v1.0.0 (2026-05-27)
+
+### Bug Fixes
+
+- **tasks**: Use AppleScript verb forms to drop/complete projects
+  ([`6f717fe`](https://github.com/igrybkov/omnifocus-mcp/commit/6f717fe44abb08dc3be08e20b17e757c51ecf1d8))
+
+### Features
+
+- Support Markdown rich text in task and project notes
+  ([`a9a9d1e`](https://github.com/igrybkov/omnifocus-mcp/commit/a9a9d1e9f6024c238002d051257bb86d1b40be21))
+
+### Testing
+
+- Make search date-filter assertions deterministic
+  ([`0e9e9d4`](https://github.com/igrybkov/omnifocus-mcp/commit/0e9e9d4d6a77306c09a0e78d690474e81c54f3fd))
+
+### Breaking Changes
+
+- Task and project notes are now Markdown everywhere. Notes are interpreted as Markdown on write,
+  and plain notes containing literal Markdown metacharacters read back escaped. Round-trips remain
+  stable.
+
+
 ## v0.1.1 (2026-02-08)
 
 ### Bug Fixes
