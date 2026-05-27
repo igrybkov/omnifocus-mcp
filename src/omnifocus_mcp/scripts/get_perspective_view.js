@@ -1,6 +1,6 @@
 // Get items visible in a specific OmniFocus perspective
 // Params: { perspective_name: string, limit: number, include_metadata: boolean, fields: string[] }
-// Requires: common/status_maps.js
+// Requires: common/status_maps.js, common/markdown_serializer.js
 
 try {
     const perspectiveName = params.perspective_name;
@@ -21,7 +21,7 @@ try {
                     result.name = task.name;
                     break;
                 case "note":
-                    result.note = task.note || "";
+                    result.note = noteToMarkdown(task);
                     break;
                 case "flagged":
                     result.flagged = task.flagged || false;

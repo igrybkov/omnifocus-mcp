@@ -34,25 +34,33 @@ class TestAddProject:
 
     @pytest.mark.asyncio
     async def test_add_project_with_note(self):
-        """Test adding a project with a note."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.projects.add_project.asyncio.create_subprocess_exec"
-        ) as mock_exec:
-            # Setup mock
+        """Test adding a project with a note applies it as rich text via OmniJS."""
+        with (
+            patch(
+                "omnifocus_mcp.mcp_tools.projects.add_project.asyncio.create_subprocess_exec"
+            ) as mock_exec,
+            patch(
+                "omnifocus_mcp.mcp_tools.projects.add_project.apply_note",
+                new=AsyncMock(return_value=(True, "Note set")),
+            ) as mock_apply_note,
+        ):
+            # AppleScript create returns the new project ID
             mock_process = AsyncMock()
-            mock_process.communicate.return_value = (
-                b"Project created successfully: Test Project",
-                b"",
-            )
+            mock_process.communicate.return_value = (b"proj-123", b"")
             mock_process.returncode = 0
             mock_exec.return_value = mock_process
 
             # Execute
-            result = await add_project(name="Test Project", note="This is a project note")
+            result = await add_project(name="Test Project", note="This is a *project* note")
 
-            # Verify
+            # The note is applied via OmniJS (Markdown -> rich text), keyed on the project ID
+            mock_apply_note.assert_awaited_once_with("proj-123", "This is a *project* note")
             assert "Project created successfully" in result
-            mock_exec.assert_called_once()
+            assert "note not set" not in result
+
+            # The AppleScript itself must no longer set the note
+            applescript = mock_exec.call_args_list[0].args[2]
+            assert "set note of" not in applescript
 
     @pytest.mark.asyncio
     async def test_add_project_escapes_special_characters(self):

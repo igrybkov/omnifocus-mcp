@@ -344,6 +344,33 @@ reorder_tasks(container_id="parentTaskId", container_type="task", mode="sort", s
 
 All user input must pass through `utils.escape_applescript_string()` before being embedded in AppleScript. The function escapes backslashes first, then double quotes.
 
+## Rich Text Notes (Markdown)
+
+**Notes are Markdown everywhere.** Every note written to OmniFocus is parsed from Markdown into OmniFocus-native rich text, and every note read back (via `search`, `browse`, `get_perspective_view`) is serialized from rich text into Markdown. There is no flag — the `note` / `new_note` field is Markdown in both directions. This makes a read → edit → write cycle round-trip without losing links or formatting.
+
+Supported syntax:
+- **Inline (lossless round-trip):** `**bold**`, `*italic*`, `***bold italic***`, `` `inline code` ``, `[text](url)` links.
+- **Blocks (best-effort round-trip):** `#`..`######` headings (mapped to font sizes), bullet (`- `) and numbered (`1. `) lists (literal markers), fenced code blocks.
+
+### Architecture
+
+| Direction | Where | Files |
+|-----------|-------|-------|
+| Markdown → rich text (write) | Python parse → runs IR → OmniJS applier | `markdown_notes.py` (`markdown_to_runs`, `apply_note`, `apply_notes`), `scripts/set_note_text.js` |
+| Rich text → Markdown (read) | OmniJS (runs serialized in-process) | `scripts/common/markdown_serializer.js` (`noteToMarkdown`), included by search/browse/get_perspective_view |
+
+The two directions are independent inverse implementations; round-trip parity is enforced by `tests/test_markdown_notes.py` plus end-to-end checks against real OmniFocus. Writes happen as an OmniJS post-step on the item ID returned by the AppleScript create/edit (mirroring `change_task_status`); AppleScript no longer touches notes.
+
+### Behavior notes & limitations
+
+- **Breaking change:** plain notes containing literal Markdown metacharacters now read back escaped (e.g. `cost $5 *each*` → `cost $5 \*each\*`). Round-trips are stable.
+- **`edit_item` cannot clear a note:** `new_note=""` means "don't change" (consistent with other edit fields). There is currently no way to empty a note via `edit_item`.
+- **iOS:** OmniFocus on iOS/iPadOS renders these rich-text notes as plain text; formatting displays on macOS.
+- **Headings via font size:** heading detection on read uses font-size thresholds (see `set_note_text.js` `HEADING_SIZES` ↔ `markdown_serializer.js` `_sizeToHeadingLevel`, which must stay in sync). Manually changing a note's font size in the OmniFocus UI can shift heading levels.
+- **`has_note` filter** is unaffected — it checks the plain `note` property, which still exists alongside `noteText`.
+
+When editing `set_note_text.js`, clear the note with `item.note = ""` before rebuilding: capturing `noteText.style` from an already-styled note inherits stray attributes (e.g. a prior heading's size) that leak into every run.
+
 ## Natural Language Date Support
 
 Date filters (`due_within`, `deferred_until`, `deferred_on`, `planned_within`) in `search` and `browse` tools accept natural language:

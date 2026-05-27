@@ -56,22 +56,33 @@ class TestAddOmniFocusTask:
 
     @pytest.mark.asyncio
     async def test_add_task_with_note(self):
-        """Test adding a task with a note."""
-        with patch(
-            "omnifocus_mcp.mcp_tools.tasks.add_task.asyncio.create_subprocess_exec"
-        ) as mock_exec:
-            # Setup mock
+        """Test adding a task with a note applies it as rich text via OmniJS."""
+        with (
+            patch(
+                "omnifocus_mcp.mcp_tools.tasks.add_task.asyncio.create_subprocess_exec"
+            ) as mock_exec,
+            patch(
+                "omnifocus_mcp.mcp_tools.tasks.add_task.apply_note",
+                new=AsyncMock(return_value=(True, "Note set")),
+            ) as mock_apply_note,
+        ):
+            # AppleScript create returns the new task ID
             mock_process = AsyncMock()
-            mock_process.communicate.return_value = (b"Task added successfully to inbox", b"")
+            mock_process.communicate.return_value = (b"task-123", b"")
             mock_process.returncode = 0
             mock_exec.return_value = mock_process
 
             # Execute
-            result = await add_omnifocus_task(name="Test Task", note="This is a note")
+            result = await add_omnifocus_task(name="Test Task", note="This is a **note**")
 
-            # Verify
-            assert "Task added successfully to inbox" in result
-            mock_exec.assert_called_once()
+            # The note is applied via OmniJS (Markdown -> rich text), keyed on the task ID
+            mock_apply_note.assert_awaited_once_with("task-123", "This is a **note**")
+            assert "Task added successfully" in result
+            assert "note not set" not in result
+
+            # The AppleScript itself must no longer set the note
+            applescript = mock_exec.call_args_list[0].args[2]
+            assert "set note of" not in applescript
 
     @pytest.mark.asyncio
     async def test_add_task_escapes_special_characters(self):
@@ -181,6 +192,84 @@ class TestEditItem:
             # Verify
             assert "Project updated successfully" in result
             mock_exec.assert_called_once()
+
+
+class TestEditItemNote:
+    """Tests for editing notes (applied as rich text via OmniJS)."""
+
+    @pytest.mark.asyncio
+    async def test_edit_task_note_applies_via_omnijs(self):
+        """A new note is applied via apply_note, keyed on the returned task ID."""
+        with (
+            patch(
+                "omnifocus_mcp.mcp_tools.tasks.edit_item.asyncio.create_subprocess_exec"
+            ) as mock_exec,
+            patch(
+                "omnifocus_mcp.mcp_tools.tasks.edit_item.apply_note",
+                new=AsyncMock(return_value=(True, "Note set")),
+            ) as mock_apply_note,
+        ):
+            mock_process = AsyncMock()
+            mock_process.communicate.return_value = (b"task-xyz", b"")
+            mock_process.returncode = 0
+            mock_exec.return_value = mock_process
+
+            result = await edit_item(id="task-xyz", new_note="updated **note**")
+
+            mock_apply_note.assert_awaited_once_with("task-xyz", "updated **note**")
+            assert "note" in result
+            # AppleScript must return the ID and not set the note directly
+            script = mock_exec.call_args[0][2]
+            assert "set note of" not in script
+            assert "return id of theTask" in script
+
+    @pytest.mark.asyncio
+    async def test_edit_project_note_applies_via_omnijs(self):
+        """Editing a project note forces the ID-returning branch and applies via OmniJS."""
+        with (
+            patch(
+                "omnifocus_mcp.mcp_tools.tasks.edit_item.asyncio.create_subprocess_exec"
+            ) as mock_exec,
+            patch(
+                "omnifocus_mcp.mcp_tools.tasks.edit_item.apply_note",
+                new=AsyncMock(return_value=(True, "Note set")),
+            ) as mock_apply_note,
+        ):
+            mock_process = AsyncMock()
+            mock_process.communicate.return_value = (b"proj-xyz", b"")
+            mock_process.returncode = 0
+            mock_exec.return_value = mock_process
+
+            result = await edit_item(id="proj-xyz", item_type="project", new_note="# Plan")
+
+            mock_apply_note.assert_awaited_once_with("proj-xyz", "# Plan")
+            assert "Project updated successfully" in result
+            script = mock_exec.call_args[0][2]
+            assert "return id of theProject" in script
+
+    @pytest.mark.asyncio
+    async def test_edit_empty_note_does_not_apply(self):
+        """An empty new_note means 'don't change' - no OmniJS note write."""
+        with (
+            patch(
+                "omnifocus_mcp.mcp_tools.tasks.edit_item.asyncio.create_subprocess_exec"
+            ) as mock_exec,
+            patch(
+                "omnifocus_mcp.mcp_tools.tasks.edit_item.apply_note",
+                new=AsyncMock(return_value=(True, "Note set")),
+            ) as mock_apply_note,
+        ):
+            mock_process = AsyncMock()
+            mock_process.communicate.return_value = (
+                b"Task updated successfully. Changed: name",
+                b"",
+            )
+            mock_process.returncode = 0
+            mock_exec.return_value = mock_process
+
+            await edit_item(id="task-1", new_name="Renamed")
+
+            mock_apply_note.assert_not_called()
 
 
 class TestEditItemParentChange:
@@ -364,10 +453,10 @@ class TestRemoveItem:
             # Verify
             assert "Project dropped successfully" in result
             mock_exec.assert_called_once()
-            # Verify the script uses 'dropped status' instead of 'delete'
+            # Verify the script drops the project (marks dropped) instead of deleting it
             call_args = mock_exec.call_args
             script = call_args[0][2]
-            assert "set status of theItem to dropped status" in script
+            assert "mark dropped" in script
             assert "delete" not in script
 
     @pytest.mark.asyncio
@@ -555,9 +644,9 @@ class TestEditItemStatusViaOmniJS:
                 new_project_status="completed",
             )
 
-            # Project completion should still be in AppleScript
+            # Project completion should still be handled in AppleScript (not OmniJS)
             script = mock_exec.call_args[0][2]
-            assert "set completed of" in script
+            assert "mark complete" in script
             assert "Project updated successfully" in result
 
 

@@ -22,7 +22,8 @@ async def batch_add_items(
         items: List of items to add. Each item is a dict with:
             - type: 'task' or 'project' (required)
             - name: Name of the item (required)
-            - note: Optional note/description
+            - note: Optional note in Markdown (bold, italic, inline code, links,
+                headings, lists -> OmniFocus-native rich text; returned as Markdown when read)
             - due_date: Optional due date in ISO format
             - defer_date: Optional defer date in ISO format
             - planned_date: Optional planned date in ISO format (tasks only, OmniFocus 4.7+)

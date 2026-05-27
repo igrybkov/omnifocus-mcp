@@ -476,6 +476,7 @@ source = { editable = "." }
 dependencies = [
     { name = "cyclopts" },
     { name = "dateparser" },
+    { name = "markdown-it-py" },
     { name = "mcp" },
 ]
 
@@ -492,6 +493,7 @@ dev = [
 requires-dist = [
     { name = "cyclopts", specifier = ">=3.0.0" },
     { name = "dateparser", specifier = ">=1.2.0" },
+    { name = "markdown-it-py", specifier = ">=3.0.0" },
     { name = "mcp", specifier = ">=1.0.0" },
 ]
 

@@ -8,6 +8,7 @@ dependencies = [
     "mcp>=1.0.0",
     "cyclopts>=3.0.0",
     "dateparser>=1.2.0",
+    "markdown-it-py>=3.0.0",
 ]
 
 

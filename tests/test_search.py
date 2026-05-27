@@ -1,11 +1,20 @@
 """Tests for search tool - query OmniFocus database."""
 
 import json
+from datetime import date, timedelta
 from unittest.mock import patch
 
 import pytest
 
 from omnifocus_mcp.mcp_tools.query.search import search
+
+
+def _days_from_today(offset: int) -> str:
+    """ISO date string that is ``offset`` days from today (negative = past).
+
+    Used so date-filter tests assert a stable offset regardless of when they run.
+    """
+    return (date.today() + timedelta(days=offset)).isoformat()
 
 
 class TestSearch:
@@ -623,7 +632,7 @@ class TestSearch:
         with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"count": 0, "entity": "tasks", "items": []}
 
-            await search(entity="tasks", filters={"completed_after": "2026-02-02"})
+            await search(entity="tasks", filters={"completed_after": _days_from_today(-6)})
 
             script_name, params, *_ = mock_exec.call_args[0]
             assert params["filters"]["completed_after"] == -6  # 6 days ago
@@ -650,7 +659,10 @@ class TestSearch:
 
             await search(
                 entity="tasks",
-                filters={"completed_after": "2026-02-02", "completed_before": "2026-02-08"},
+                filters={
+                    "completed_after": _days_from_today(-6),
+                    "completed_before": _days_from_today(0),
+                },
             )
 
             script_name, params, *_ = mock_exec.call_args[0]
@@ -681,10 +693,10 @@ class TestSearch:
         with patch("omnifocus_mcp.mcp_tools.response.execute_omnijs_with_params") as mock_exec:
             mock_exec.return_value = {"count": 0, "entity": "tasks", "items": []}
 
-            await search(entity="tasks", filters={"due_after": "2026-02-10"})
+            await search(entity="tasks", filters={"due_after": _days_from_today(2)})
 
             script_name, params, *_ = mock_exec.call_args[0]
-            assert params["filters"]["due_after"] == 2  # 2 days from today (Feb 8)
+            assert params["filters"]["due_after"] == 2  # 2 days from today
 
     @pytest.mark.asyncio
     async def test_search_with_due_before_filter(self):
@@ -705,7 +717,7 @@ class TestSearch:
 
             await search(
                 entity="tasks",
-                filters={"due_after": "2026-02-05", "due_before": "2026-02-12"},
+                filters={"due_after": _days_from_today(-3), "due_before": _days_from_today(4)},
             )
 
             script_name, params, *_ = mock_exec.call_args[0]
