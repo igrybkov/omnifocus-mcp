@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.1 (2026-06-04)
+
+### Bug Fixes
+
+- **deps**: Pin dependencies ([#17](https://github.com/igrybkov/omnifocus-mcp/pull/17),
+  [`ddff802`](https://github.com/igrybkov/omnifocus-mcp/commit/ddff802984c167526ddef8b33dc5b5ee468d4412))
+
+
 ## v1.0.0 (2026-05-27)
 
 ### Bug Fixes
