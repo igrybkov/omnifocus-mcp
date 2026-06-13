@@ -3,10 +3,10 @@ name = "omnifocus-mcp"
 dynamic = ["version"]
 description = "MCP server to interact with OmniFocus in an efficient manner"
 readme = "README.md"
-requires-python = "==3.14.5"
+requires-python = "==3.14.6"
 dependencies = [
     "mcp==1.27.2",
-    "cyclopts==4.16.1",
+    "cyclopts==4.18.0",
     "dateparser==1.4.0",
     "markdown-it-py==4.2.0",
 ]
@@ -17,7 +17,7 @@ dev = [
     "pytest==9.0.3",
     "pytest-asyncio==1.4.0",
     "pytest-watch==4.2.0",
-    "ruff==0.15.16",
+    "ruff==0.15.17",
     "pre-commit==4.6.0",
 ]
 
