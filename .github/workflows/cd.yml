@@ -31,7 +31,7 @@ jobs:
       - uses: astral-sh/setup-uv@v8.2.0
       - run: uv python install 3.12
       - id: release
-        uses: python-semantic-release/python-semantic-release@v10.5.3
+        uses: python-semantic-release/python-semantic-release@v10.6.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           git_committer_name: "github-actions"
@@ -39,7 +39,7 @@ jobs:
       - name: Build package
         if: steps.release.outputs.released == 'true'
         run: uv build
-      - uses: python-semantic-release/publish-action@v10.5.3
+      - uses: python-semantic-release/publish-action@v10.6.0
         if: steps.release.outputs.released == 'true'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
