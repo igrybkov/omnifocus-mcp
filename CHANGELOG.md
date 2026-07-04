@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.0.6 (2026-07-04)
+
+### Bug Fixes
+
+- **deps**: Update dependency cyclopts to v4.20.0
+  ([#36](https://github.com/igrybkov/omnifocus-mcp/pull/36),
+  [`ea36471`](https://github.com/igrybkov/omnifocus-mcp/commit/ea36471b1cae6509941ea403ba82ce25566350e7))
+
+
 ## v1.0.5 (2026-06-27)
 
 ### Bug Fixes
