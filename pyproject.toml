@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = "==3.14.6"
 dependencies = [
     "mcp==1.28.1",
-    "cyclopts==4.20.0",
+    "cyclopts==4.21.0",
     "dateparser==1.4.1",
     "markdown-it-py==4.2.0",
 ]
@@ -17,7 +17,7 @@ dev = [
     "pytest==9.1.1",
     "pytest-asyncio==1.4.0",
     "pytest-watch==4.2.0",
-    "ruff==0.15.20",
+    "ruff==0.15.21",
     "pre-commit==4.6.0",
 ]
 
