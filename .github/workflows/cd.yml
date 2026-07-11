@@ -28,10 +28,10 @@ jobs:
           ref: ${{ github.ref_name }}
           fetch-depth: 0
       - run: git reset --hard ${{ github.event.workflow_run.head_sha }}
-      - uses: astral-sh/setup-uv@v8.3.0
+      - uses: astral-sh/setup-uv@v8.3.2
       - run: uv python install 3.12
       - id: release
-        uses: python-semantic-release/python-semantic-release@v10.6.0
+        uses: python-semantic-release/python-semantic-release@v10.6.1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           git_committer_name: "github-actions"
@@ -39,7 +39,7 @@ jobs:
       - name: Build package
         if: steps.release.outputs.released == 'true'
         run: uv build
-      - uses: python-semantic-release/publish-action@v10.6.0
+      - uses: python-semantic-release/publish-action@v10.6.1
         if: steps.release.outputs.released == 'true'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
