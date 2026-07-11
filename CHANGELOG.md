@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.0.7 (2026-07-11)
+
+### Bug Fixes
+
+- **deps**: Update python dependencies (non-major)
+  ([#41](https://github.com/igrybkov/omnifocus-mcp/pull/41),
+  [`254d5b8`](https://github.com/igrybkov/omnifocus-mcp/commit/254d5b826ae28e5b2395b04ce713146c80e758c1))
+
+
 ## v1.0.6 (2026-07-04)
 
 ### Bug Fixes
