@@ -28,7 +28,7 @@ jobs:
           ref: ${{ github.ref_name }}
           fetch-depth: 0
       - run: git reset --hard ${{ github.event.workflow_run.head_sha }}
-      - uses: astral-sh/setup-uv@v9.0.0
+      - uses: astral-sh/setup-uv@v10.0.1
       - run: uv python install 3.12
       - id: release
         uses: python-semantic-release/python-semantic-release@v10.6.1
