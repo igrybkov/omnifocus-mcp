@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.0.11 (2026-10-20)
+
+### Bug Fixes
+
+- **deps**: Update dependency mcp to v1.30.0 [security]
+  ([#68](https://github.com/igrybkov/omnifocus-mcp/pull/68),
+  [`d6d70eb`](https://github.com/igrybkov/omnifocus-mcp/commit/d6d70ebc9d8a6548439ff4a04647dd0bb7f97c17))
+
+
 ## v1.0.10 (2026-07-19)
 
 ### Bug Fixes
